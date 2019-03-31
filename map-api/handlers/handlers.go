@@ -21,6 +21,13 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	searcher := search.Searcher{Query: query}
 	searcher.Search()
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(searcher.Results)
+	switch searcher.Results {
+	case nil:
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(`{"message":"no results found"}`) // This is wrong
+	default:
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(searcher.Results)
+	}
+
 }
