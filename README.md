@@ -21,9 +21,10 @@ This is an extension of: https://github.com/stevenayers/golang-webcrawler
 - Will mitigate duplicate posts to the indexing service
 - Must be able to cater to pages changing and updating the sitemap accordingly.
 - All inter-service communication will be encrypted and will use gRPC
+- Initially design with Json/REST
 
 ### Workflow
-![app-workflow](imgs/go-clamber.png)
+![app-workflow](docs/imgs/go-clamber.png)
 
 
 ## Components
