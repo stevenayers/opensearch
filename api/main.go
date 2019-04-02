@@ -1,7 +1,7 @@
 package main
 
 import (
-	"go-clamber/map-api/routes"
+	"go-clamber/api/routes"
 	"log"
 	"net/http"
 )

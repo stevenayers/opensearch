@@ -2,8 +2,8 @@ package routes
 
 import (
 	"github.com/gorilla/mux"
-	"go-clamber/map-api/handlers"
-	"go-clamber/map-api/logger"
+	"go-clamber/api/handlers"
+	"go-clamber/api/logger"
 	"net/http"
 )
 
@@ -19,7 +19,7 @@ type Route struct {
 
 var routes = Routes{
 	Route{
-		"Search",
+		"Initiate",
 		"GET",
 		"/search",
 		handlers.Search,

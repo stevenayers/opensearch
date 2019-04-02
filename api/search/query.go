@@ -1,4 +1,4 @@
-package models
+package search
 
 type Query struct {
 	Url                string `json:"url"`
