@@ -6,10 +6,22 @@ import (
 	"testing"
 )
 
-type FetchUrlTest struct {
-	Url       string
-	httpError bool
-}
+type (
+	FetchUrlTest struct {
+		Url       string
+		httpError bool
+	}
+
+	RelativeUrlTest struct {
+		Url        string
+		IsRelative bool
+	}
+
+	ParseUrlTest struct {
+		Url         string
+		ExpectedUrl string
+	}
+)
 
 var FetchUrlTests = []FetchUrlTest{
 	{"http://example.edu", false},
@@ -21,11 +33,6 @@ var FetchUrlTests = []FetchUrlTest{
 	{"test", true},
 }
 
-type RelativeUrlTest struct {
-	Url        string
-	IsRelative bool
-}
-
 var RelativeUrlTests = []RelativeUrlTest{
 	{"http://example.edu", false},
 	{"HTTP://EXAMPLE.EDU", false},
@@ -34,11 +41,6 @@ var RelativeUrlTests = []RelativeUrlTest{
 	{"//cdn.example.edu/lib.js", false},
 	{"/myfolder/test.txt", true},
 	{"test", true},
-}
-
-type ParseUrlTest struct {
-	Url         string
-	ExpectedUrl string
 }
 
 var ParseUrlTests = []ParseUrlTest{

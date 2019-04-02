@@ -7,17 +7,19 @@ import (
 	"net/http"
 )
 
-type Routes []Route
+type (
+	Routes []Route
 
-type Route struct {
-	Name        string
-	Method      string
-	Pattern     string
-	HandlerFunc http.HandlerFunc
-	Queries     []string
-}
+	Route struct {
+		Name        string
+		Method      string
+		Pattern     string
+		HandlerFunc http.HandlerFunc
+		Queries     []string
+	}
+)
 
-var routes = Routes{
+var DefinedRoutes = Routes{
 	Route{
 		"Initiate",
 		"GET",
@@ -33,7 +35,7 @@ var routes = Routes{
 
 func NewRouter() *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
-	for _, route := range routes {
+	for _, route := range DefinedRoutes {
 		var handler http.Handler
 
 		handler = route.HandlerFunc

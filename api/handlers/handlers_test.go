@@ -1,10 +1,7 @@
 package handlers_test
 
 import (
-	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
-	"go-clamber/api/handlers"
-	"go-clamber/api/logger"
 	"go-clamber/api/routes"
 	"net/http"
 	"net/http/httptest"
@@ -39,30 +36,7 @@ func TestSearchHandler(t *testing.T) {
 		q.Add("allow_external_links", strconv.FormatBool(test.AllowExternalLinks))
 		req.URL.RawQuery = q.Encode()
 		response := httptest.NewRecorder()
-		Router().ServeHTTP(response, req)
+		routes.NewRouter().ServeHTTP(response, req)
 		assert.Equal(t, 404, response.Code, "NotFound response is expected")
 	}
-}
-
-func Router() *mux.Router {
-	queries := []string{
-		"url", "{url}",
-		"depth", "{depth}",
-		"allow_external_links", "{allow_external_links}",
-	}
-	route := routes.Route{
-		Name:        "Initiate",
-		Method:      "GET",
-		Pattern:     "/search",
-		HandlerFunc: handlers.Search,
-		Queries:     queries,
-	}
-	router := mux.NewRouter()
-	handler := logger.Logger(route.HandlerFunc, route.Name)
-	router.
-		Methods(route.Method).
-		Path(route.Pattern).
-		Name(route.Name).
-		Handler(handler).Queries(route.Queries...)
-	return router
 }
