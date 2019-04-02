@@ -40,7 +40,7 @@ func TestSearchHandler(t *testing.T) {
 		req.URL.RawQuery = q.Encode()
 		response := httptest.NewRecorder()
 		Router().ServeHTTP(response, req)
-		assert.Equal(t, 404, response.Code, "OK response is expected")
+		assert.Equal(t, 404, response.Code, "NotFound response is expected")
 	}
 }
 
