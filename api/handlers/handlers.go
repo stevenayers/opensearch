@@ -22,11 +22,8 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	searcher := search.Search{Query: query}
 	searcher.Initiate()
 
-	switch {
-	case len(searcher.Results) == 0:
+	if len(searcher.Results) == 0 {
 		w.WriteHeader(http.StatusNotFound)
-	default:
-		w.WriteHeader(http.StatusOK)
 	}
 	json.NewEncoder(w).Encode(searcher)
 
