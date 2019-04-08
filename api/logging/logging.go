@@ -31,7 +31,7 @@ func Logger(handler http.Handler) http.Handler {
 			rw.statusCode,
 			time.Since(start),
 			r.URL.Path,
-			"?"+r.URL.RawQuery,
+			"?"+r.URL.RawQuery, // This will add a question mark onto any request, regardless of query params, not good.
 		)
 
 	})
