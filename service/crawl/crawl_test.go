@@ -52,7 +52,6 @@ func TestAllPagesReturned(t *testing.T) {
 		rootPage := fetch.Page{Url: rootUrl, Depth: 1}
 		Urls, _ := rootPage.FetchUrls()
 		crawler.Crawl(&rootPage)
-
 		assert.Equal(t, len(Urls), len(rootPage.Links), "page.Links and fetch Urls length expected to match.")
 	}
 }
@@ -64,9 +63,7 @@ func recursivelySearchPages(t *testing.T, p *fetch.Page, Url string, counter *in
 			if v.Links != nil && v.Url.String() == Url { // Check if page has links
 				*depths = append(*depths, v.Depth) // Log the depth it was counted (useful when inspecting data structure)
 				*counter++
-				if *counter >= 2 {
-					t.Fatalf("URL: %s was found %d times", Url, *counter)
-				}
+				assert.Greater(t, 2, *counter, "Url was counted more than once.")
 				recursivelySearchPages(t, v, Url, counter, depths) // search child page
 			}
 		}
