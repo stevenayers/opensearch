@@ -4,7 +4,7 @@ Controls the crawling through a website's structure, also manages the crawl stat
 package crawl
 
 import (
-	"golang-webcrawler/fetch"
+	"go-clamber/service/page"
 	"net/url"
 	"strings"
 	"sync"
@@ -15,21 +15,21 @@ type Crawler struct { // Struct to manage Crawl state in one place.
 	sync.Mutex
 }
 
-func (crawler *Crawler) Crawl(page *fetch.Page) {
-	if page.Depth <= 0 {
+func (crawler *Crawler) Crawl(currentPage *page.Page) {
+	if currentPage.Depth <= 0 {
 		return
 	}
-	if crawler.hasAlreadyCrawled(page.Url) {
+	if crawler.hasAlreadyCrawled(currentPage.Url) {
 		return
 	}
 	wg := sync.WaitGroup{}
-	childPagesChan := make(chan *fetch.Page)
-	childUrls, _ := page.FetchUrls()
-	for _, childUrl := range childUrls { // Iterate through links found on page
+	childPagesChan := make(chan *page.Page)
+	childUrls, _ := currentPage.FetchUrls()
+	for _, childUrl := range childUrls { // Iterate through links found on currentPage
 		wg.Add(1)
-		go func(childUrl *url.URL) { // create goroutines for each link found and crawl the child page
+		go func(childUrl *url.URL) { // create goroutines for each link found and crawl the child currentPage
 			defer wg.Done()
-			childPage := fetch.Page{Url: childUrl, Depth: page.Depth - 1}
+			childPage := page.Page{Url: childUrl, Depth: currentPage.Depth - 1}
 			crawler.Crawl(&childPage)
 			childPagesChan <- &childPage
 		}(childUrl)
@@ -39,7 +39,7 @@ func (crawler *Crawler) Crawl(page *fetch.Page) {
 		close(childPagesChan)
 	}()
 	for childPages := range childPagesChan { // Feed channel values into slice, possibly performance inefficient.
-		page.Links = append(page.Links, childPages)
+		currentPage.Links = append(currentPage.Links, childPages)
 	}
 }
 

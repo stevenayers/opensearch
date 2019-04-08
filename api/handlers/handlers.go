@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"go-clamber/api/search"
+	"go-clamber/service/database"
 	"net/http"
+	"net/url"
 	"strconv"
 )
 
@@ -17,8 +19,8 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		panic(err)
 	}
-
-	query := search.Query{Url: vars["url"], Depth: depth, AllowExternalLinks: allowExternalLinks}
+	parsedUrl, err := url.Parse(vars["url"])
+	query := database.Query{Url: parsedUrl, Depth: depth, AllowExternalLinks: allowExternalLinks}
 	searcher := search.Search{Query: query}
 	searcher.Initiate()
 

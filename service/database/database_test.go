@@ -37,7 +37,7 @@ func (s *StoreSuite) SetupTest() {
 func (s *StoreSuite) TearDownSuite() {
 	err := s.db.Close()
 	if err != nil {
-		fmt.Printf(err.Error())
+		fmt.Print(err)
 	}
 }
 
@@ -76,10 +76,10 @@ func (s *StoreSuite) TestGet() {
 	if err != nil {
 		s.T().Fatal(err)
 	}
-	pages, err := s.store.Get()
+	pages, err := s.store.Get(database.Query{})
 	if err != nil {
 		s.T().Fatal(err)
 	}
 	assert.Equal(s.T(), 1, len(pages), "Expected matching length")
-	assert.Equal(s.T(), expectedPage, *pages[0], "Expected matching page data")
+	assert.Equal(s.T(), expectedPage, *&pages[0], "Expected matching page data")
 }

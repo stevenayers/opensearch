@@ -1,26 +1,35 @@
 package search
 
-import "go-clamber/service/page"
+import (
+	"database/sql"
+	"fmt"
+	_ "github.com/mattn/go-sqlite3"
+	"go-clamber/service/crawl"
+	"go-clamber/service/database"
+	"go-clamber/service/page"
+)
 
 type (
-	Results []page.Page
-
-	Queries []Query
-
-	Query struct {
-		Url                string `json:"url"`
-		Depth              int    `json:"depth"`
-		AllowExternalLinks bool   `json:"allow_external_links"`
-	}
-
 	Search struct {
-		Query   Query   `json:"query"`
-		Results Results `json:"results"`
+		Query   database.Query   `json:"query"`
+		Results database.Results `json:"results"`
 	}
 )
 
-func (Search) Initiate() {
-	// Check database for query
-	// If exists, return
-	// If not, send URL to producer.
+func (search Search) Initiate() {
+	db, err := sql.Open("sqlite3", "testing/pages.sqlite")
+	if err != nil {
+		fmt.Print(err)
+	}
+	database.InitStore(&database.DbStore{Db: db})
+	results, err := database.DB.Get(search.Query)
+	if err != nil {
+		fmt.Print(err)
+	}
+	if len(results) == 0 {
+		crawler := crawl.Crawler{AlreadyCrawled: make(map[string]struct{})}
+		crawler.Crawl(&page.Page{Url: search.Query.Url})
+	} else {
+		search.Results = results
+	}
 }

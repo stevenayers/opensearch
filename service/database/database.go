@@ -8,10 +8,19 @@ import (
 )
 
 type (
+	Results []page.Page
+
+	Queries []Query
+
+	Query struct {
+		Url                *url.URL `json:"url"`
+		Depth              int      `json:"depth"`
+		AllowExternalLinks bool     `json:"allow_external_links"`
+	}
+
 	Store interface {
-		Create()
-		FindByUrl()
-		Update()
+		Get(query Query) (Results, error)
+		Create(page *page.Page) error
 	}
 
 	DbStore struct {
@@ -27,14 +36,14 @@ func (store *DbStore) Create(page *page.Page) error {
 	return err
 }
 
-func (store *DbStore) Get() ([]*page.Page, error) {
+func (store *DbStore) Get(query Query) (Results, error) {
 	rows, err := store.Db.Query("SELECT url from pages")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var pages []*page.Page
+	var pages Results
 	for rows.Next() {
 		var Url string
 		if err := rows.Scan(&Url); err != nil {
@@ -42,13 +51,13 @@ func (store *DbStore) Get() ([]*page.Page, error) {
 		}
 		parsedUrl, _ := url.Parse(Url)
 		thisPage := page.Page{Url: parsedUrl}
-		pages = append(pages, &thisPage)
+		pages = append(pages, thisPage)
 	}
 	return pages, nil
 }
 
-var store Store
+var DB Store
 
 func InitStore(s Store) {
-	store = s
+	DB = s
 }
