@@ -1,6 +1,7 @@
 package crawl_test
 
 import (
+	"github.com/stretchr/testify/assert"
 	"golang-webcrawler/crawl"
 	"golang-webcrawler/fetch"
 	"net/url"
@@ -50,12 +51,9 @@ func TestAllPagesReturned(t *testing.T) {
 		rootUrl, _ := url.Parse(testUrl)
 		rootPage := fetch.Page{Url: rootUrl, Depth: 1}
 		Urls, _ := rootPage.FetchUrls()
-
 		crawler.Crawl(&rootPage)
-		if len(rootPage.Links) != len(Urls) {
-			t.Fatalf("%s: page.Links length (%d) did not match FetchUrls output length (%d).",
-				testUrl, len(rootPage.Links), len(Urls))
-		}
+
+		assert.Equal(t, len(Urls), len(rootPage.Links), "page.Links and fetch Urls length expected to match.")
 	}
 }
 

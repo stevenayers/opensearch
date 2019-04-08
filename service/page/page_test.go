@@ -1,6 +1,7 @@
 package page_test
 
 import (
+	"github.com/stretchr/testify/assert"
 	"golang-webcrawler/fetch"
 	"net/url"
 	"testing"
@@ -55,9 +56,7 @@ func TestFetchUrlsHttpError(t *testing.T) {
 		Url, _ := url.Parse(test.Url)
 		page := fetch.Page{Url: Url, Depth: 1}
 		_, err := page.FetchUrls()
-		if (err != nil) != test.httpError {
-			t.Fatalf("%s returned error: %t (expected %t)", test.Url, !test.httpError, test.httpError)
-		}
+		assert.Equal(t, test.httpError, err != nil)
 	}
 }
 
@@ -68,9 +67,7 @@ func TestFetchUrlsHttpError(t *testing.T) {
 
 func TestIsRelativeUrl(t *testing.T) {
 	for _, test := range RelativeUrlTests {
-		if fetch.IsRelativeUrl(test.Url) != test.IsRelative {
-			t.Fatalf("URL %s did not return %t", test.Url, test.IsRelative)
-		}
+		assert.Equal(t, test.IsRelative, fetch.IsRelativeUrl(test.Url))
 	}
 }
 
@@ -78,8 +75,6 @@ func TestParseRelativeUrl(t *testing.T) {
 	rootUrl, _ := url.Parse("http://example.edu")
 	for _, test := range ParseUrlTests {
 		absoluteUrl := fetch.ParseRelativeUrl(rootUrl, test.Url)
-		if absoluteUrl.String() != test.ExpectedUrl {
-			t.Fatalf("Relative URL %s did not match %s when parsed: %s", test.Url, test.ExpectedUrl, absoluteUrl)
-		}
+		assert.Equal(t, test.ExpectedUrl, absoluteUrl.String())
 	}
 }
