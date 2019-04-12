@@ -2,7 +2,8 @@ package database
 
 import (
 	"database/sql"
-	"go-clamber/service/page"
+	"fmt"
+	"go-clamber/page"
 	"net/url"
 	"time"
 )
@@ -29,10 +30,28 @@ type (
 )
 
 func (store *DbStore) Create(page *page.Page) error {
-	_, err := store.Db.Exec(
-		"INSERT INTO pages(url, parent, timestamp, body) VALUES ($1,$2,$3,$4)",
-		page.Url.String(), nil, time.Now(), nil,
-	)
+
+	var err error
+	if page.Parent == nil {
+		_, err = store.Db.Exec(
+			"INSERT INTO pages(url, domain, parent, timestamp, body) VALUES ($1,$2,$3,$4,$5)",
+			page.Url.String(), page.Url.Host, nil, time.Now(), page.Body,
+		)
+		if err != nil {
+			fmt.Print(err)
+			fmt.Println("LA")
+		}
+	} else {
+		_, err = store.Db.Exec(
+			"INSERT INTO pages(url, domain, parent, timestamp, body) VALUES ($1,$2,$3,$4,$5)",
+			page.Url.String(), page.Url.Host, page.Parent.Url.String(), time.Now(), page.Body,
+		)
+		if err != nil {
+			fmt.Print(err)
+			fmt.Println("LAA")
+		}
+	}
+
 	return err
 }
 

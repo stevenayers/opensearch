@@ -3,8 +3,8 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"go-clamber/api/search"
-	"go-clamber/service/database"
+	"go-clamber/database"
+	"go-clamber/search"
 	"net/http"
 	"net/url"
 	"strconv"

@@ -4,8 +4,8 @@ Fetches page data, converts the HTML into AlreadyCrawled, and formats the URLs
 package page
 
 import (
-	"errors"
 	"github.com/PuerkitoBio/goquery"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -17,23 +17,29 @@ import (
 
 type Page struct {
 	Url       *url.URL  `json:"url"`
-	Links     []*Page   `json:"links"`
+	Children  []*Page   `json:"links"`
+	Parent    *Page     `json:"parent"`
 	Depth     int       `json:"depth"`
 	Timestamp time.Time `json:"timestamp"`
 	Body      string    `json:"body"`
 }
 
-func (page *Page) FetchUrls() (urls []*url.URL, err error) {
+func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 	resp, err := http.Get(page.Url.String())
 	if err != nil {
 		log.Printf("failed to get URL %s: %v", page.Url.String(), err)
 		return
 	}
-	doc, err := parseDoc(resp)
+	defer resp.Body.Close()                                               // Closes response body FetchUrls function is done.
+	if !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") { // Check if HTML file
+		return
+	}
+	doc, body, err := parseHtml(resp)
 	if err != nil {
 		log.Printf("failed to parse HTML: %v", err)
 		return
 	}
+
 	localProcessed := make(map[string]struct{}) // Ensures we don't store the same Url twice and
 	// end up spawning 2 goroutines for same result
 	doc.Find("a").Each(func(index int, item *goquery.Selection) {
@@ -43,20 +49,26 @@ func (page *Page) FetchUrls() (urls []*url.URL, err error) {
 			_, isPresent := localProcessed[absoluteUrl.Path]
 			if !isPresent {
 				localProcessed[absoluteUrl.Path] = struct{}{}
-				urls = append(urls, absoluteUrl)
+				childPage := Page{
+					Url:    absoluteUrl,
+					Parent: page,
+					Depth:  page.Depth - 1,
+					Body:   body,
+				}
+				childPages = append(childPages, &childPage)
 			}
 		}
 	})
 	return
 }
 
-func parseDoc(resp *http.Response) (doc *goquery.Document, err error) {
-	if !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") { // Check if HTML file
-		err = errors.New("Content-Type header not 'text/hml'")
+func parseHtml(resp *http.Response) (doc *goquery.Document, body string, err error) {
+	doc, err = goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
 		return
 	}
-	defer resp.Body.Close() // Closes response body FetchUrls function is done.
-	doc, err = goquery.NewDocumentFromReader(resp.Body)
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	body = string(bodyBytes)
 	return
 }
 

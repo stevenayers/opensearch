@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
-	"go-clamber/service/crawl"
-	"go-clamber/service/database"
-	"go-clamber/service/page"
+	"go-clamber/crawl"
+	"go-clamber/database"
+	"go-clamber/page"
 )
 
 type (
@@ -17,7 +17,7 @@ type (
 )
 
 func (search Search) Initiate() {
-	db, err := sql.Open("sqlite3", "testing/pages.sqlite")
+	db, err := sql.Open("sqlite3", "../database/testing/pages.sqlite")
 	if err != nil {
 		fmt.Print(err)
 	}
@@ -28,7 +28,7 @@ func (search Search) Initiate() {
 	}
 	if len(results) == 0 {
 		crawler := crawl.Crawler{AlreadyCrawled: make(map[string]struct{})}
-		crawler.Crawl(&page.Page{Url: search.Query.Url})
+		crawler.Crawl(&page.Page{Url: search.Query.Url}, database.DB)
 	} else {
 		search.Results = results
 	}

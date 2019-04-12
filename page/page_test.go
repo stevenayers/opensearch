@@ -2,7 +2,7 @@ package page_test
 
 import (
 	"github.com/stretchr/testify/assert"
-	"golang-webcrawler/fetch"
+	"go-clamber/page"
 	"net/url"
 	"testing"
 )
@@ -54,27 +54,27 @@ var ParseUrlTests = []ParseUrlTest{
 func TestFetchUrlsHttpError(t *testing.T) {
 	for _, test := range FetchUrlTests {
 		Url, _ := url.Parse(test.Url)
-		page := fetch.Page{Url: Url, Depth: 1}
-		_, err := page.FetchUrls()
+		thisPage := page.Page{Url: Url, Depth: 1}
+		_, err := thisPage.FetchChildPages()
 		assert.Equal(t, test.httpError, err != nil)
 	}
 }
 
 // If I had more time, I could also simulate a page with a given number of links, and check that the number of links
 // on the page reflect the number of links returned.
-// Another test case is checking correct errors from parseDoc
+// Another test case is checking correct errors from parseHtml
 // Would also test IsRelativeHtml regexs (very important to test Regex)
 
 func TestIsRelativeUrl(t *testing.T) {
 	for _, test := range RelativeUrlTests {
-		assert.Equal(t, test.IsRelative, fetch.IsRelativeUrl(test.Url))
+		assert.Equal(t, test.IsRelative, page.IsRelativeUrl(test.Url))
 	}
 }
 
 func TestParseRelativeUrl(t *testing.T) {
 	rootUrl, _ := url.Parse("http://example.edu")
 	for _, test := range ParseUrlTests {
-		absoluteUrl := fetch.ParseRelativeUrl(rootUrl, test.Url)
+		absoluteUrl := page.ParseRelativeUrl(rootUrl, test.Url)
 		assert.Equal(t, test.ExpectedUrl, absoluteUrl.String())
 	}
 }

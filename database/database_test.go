@@ -6,8 +6,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"go-clamber/service/database"
-	"go-clamber/service/page"
+	"go-clamber/database"
+	"go-clamber/page"
 	"net/url"
 	"testing"
 )
@@ -49,7 +49,8 @@ func TestStoreSuite(t *testing.T) {
 func (s *StoreSuite) TestCreatePage() {
 	parsedUrl, _ := url.Parse("https://google.com")
 	err := s.store.Create(&page.Page{
-		Url: parsedUrl,
+		Url:  parsedUrl,
+		Body: "",
 	})
 	if err != nil {
 		s.T().Fatal(err)
@@ -69,7 +70,7 @@ func (s *StoreSuite) TestCreatePage() {
 }
 
 func (s *StoreSuite) TestGet() {
-	testUrl := "https://google.com"
+	testUrl := "https://googless.com"
 	parsedUrl, _ := url.Parse(testUrl)
 	expectedPage := page.Page{Url: parsedUrl}
 	_, err := s.db.Exec(`INSERT INTO pages (url) VALUES($1)`, testUrl)
