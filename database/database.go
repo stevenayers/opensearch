@@ -1,11 +1,9 @@
 package database
 
 import (
-	"database/sql"
-	"fmt"
+	"github.com/neo4j/neo4j-go-driver/neo4j"
 	"go-clamber/page"
 	"net/url"
-	"time"
 )
 
 type (
@@ -25,54 +23,34 @@ type (
 	}
 
 	DbStore struct {
-		Db *sql.DB
+		neo4j.Session
 	}
 )
 
 func (store *DbStore) Create(page *page.Page) error {
-
-	var err error
-	if page.Parent == nil {
-		_, err = store.Db.Exec(
-			"INSERT INTO pages(url, domain, parent, timestamp, body) VALUES ($1,$2,$3,$4,$5)",
-			page.Url.String(), page.Url.Host, nil, time.Now(), page.Body,
-		)
-		if err != nil {
-			fmt.Print(err)
-			fmt.Println("LA")
-		}
-	} else {
-		_, err = store.Db.Exec(
-			"INSERT INTO pages(url, domain, parent, timestamp, body) VALUES ($1,$2,$3,$4,$5)",
-			page.Url.String(), page.Url.Host, page.Parent.Url.String(), time.Now(), page.Body,
-		)
-		if err != nil {
-			fmt.Print(err)
-			fmt.Println("LAA")
-		}
-	}
-
+	_, err := store.Run("CREATE (n:Page { url: $url, body: $body }) RETURN n.url, n.body", map[string]interface{}{
+		"url":  page.Url.String(),
+		"body": page.Body,
+	})
 	return err
 }
 
-func (store *DbStore) Get(query Query) (Results, error) {
-	rows, err := store.Db.Query("SELECT url from pages")
+func (store *DbStore) Get(queryUrl string) (pages Results, err error) {
+	result, err := store.Run("MATCH (n:Page) WHERE n.url = $url RETURN n.url, n.body", map[string]interface{}{
+		"url": queryUrl,
+	})
 	if err != nil {
-		return nil, err
+		return
 	}
-	defer rows.Close()
-
-	var pages Results
-	for rows.Next() {
-		var Url string
-		if err := rows.Scan(&Url); err != nil {
-			return nil, err
+	for result.Next() {
+		parsedUrl, _ := url.Parse(result.Record().GetByIndex(0).(string))
+		thisPage := page.Page{
+			Url:  parsedUrl,
+			Body: result.Record().GetByIndex(1).(string),
 		}
-		parsedUrl, _ := url.Parse(Url)
-		thisPage := page.Page{Url: parsedUrl}
 		pages = append(pages, thisPage)
 	}
-	return pages, nil
+	return
 }
 
 var DB Store

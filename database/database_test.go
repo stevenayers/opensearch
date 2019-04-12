@@ -1,9 +1,8 @@
 package database_test
 
 import (
-	"database/sql"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/neo4j/neo4j-go-driver/neo4j"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go-clamber/database"
@@ -14,28 +13,32 @@ import (
 
 type StoreSuite struct {
 	suite.Suite
-	store *database.DbStore
-	db    *sql.DB
+	store  *database.DbStore
+	driver neo4j.Driver
 }
 
 func (s *StoreSuite) SetupSuite() {
-	db, err := sql.Open("sqlite3", "testing/pages.sqlite")
+	s.store = &database.DbStore{}
+	var err error
+	s.driver, err = neo4j.NewDriver("bolt://localhost:7687", neo4j.BasicAuth("neo4j", "password", ""))
+	if err != nil {
+		fmt.Print(err)
+	}
+	s.store.Session, err = s.driver.Session(neo4j.AccessModeWrite)
 	if err != nil {
 		s.T().Fatal(err)
 	}
-	s.db = db
-	s.store = &database.DbStore{Db: db}
 }
 
 func (s *StoreSuite) SetupTest() {
-	_, err := s.db.Exec("DELETE FROM pages")
-	if err != nil {
+	result, err := s.store.Run("MATCH (n) DELETE n", map[string]interface{}{})
+	if err = result.Err(); err != nil {
 		s.T().Fatal(err)
 	}
 }
 
 func (s *StoreSuite) TearDownSuite() {
-	err := s.db.Close()
+	err := s.driver.Close()
 	if err != nil {
 		fmt.Print(err)
 	}
@@ -47,37 +50,41 @@ func TestStoreSuite(t *testing.T) {
 }
 
 func (s *StoreSuite) TestCreatePage() {
+	defer s.store.Close()
 	parsedUrl, _ := url.Parse("https://google.com")
 	err := s.store.Create(&page.Page{
 		Url:  parsedUrl,
 		Body: "",
 	})
-	if err != nil {
-		s.T().Fatal(err)
+	result, err := s.store.Run("MATCH (n:Page) WHERE n.url = $url RETURN count(*)", map[string]interface{}{
+		"url": parsedUrl.String(),
+	})
+	count := 0
+	for result.Next() {
+		count = int(result.Record().GetByIndex(0).(int64))
 	}
-	res, err := s.db.Query(`SELECT COUNT(*) FROM pages WHERE url=$1`, parsedUrl.String())
-	if err != nil {
+	if err = result.Err(); err != nil {
 		s.T().Fatal(err)
-	}
-	var count int
-	for res.Next() {
-		err := res.Scan(&count)
-		if err != nil {
-			s.T().Error(err)
-		}
 	}
 	assert.Equal(s.T(), 1, count, "Expected to find created page.")
+
 }
 
 func (s *StoreSuite) TestGet() {
-	testUrl := "https://googless.com"
+	testUrl := "https://google.com"
 	parsedUrl, _ := url.Parse(testUrl)
-	expectedPage := page.Page{Url: parsedUrl}
-	_, err := s.db.Exec(`INSERT INTO pages (url) VALUES($1)`, testUrl)
+	expectedPage := page.Page{
+		Url:  parsedUrl,
+		Body: "test",
+	}
+	_, err := s.store.Run("CREATE (n:Page { url: $url, body: $body }) RETURN n.url, n.body", map[string]interface{}{
+		"url":  parsedUrl.String(),
+		"body": "test",
+	})
 	if err != nil {
 		s.T().Fatal(err)
 	}
-	pages, err := s.store.Get(database.Query{})
+	pages, err := s.store.Get(testUrl)
 	if err != nil {
 		s.T().Fatal(err)
 	}
