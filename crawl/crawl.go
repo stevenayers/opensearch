@@ -4,6 +4,7 @@ Controls the crawling through a website's structure, also manages the crawl stat
 package crawl
 
 import (
+	"fmt"
 	"go-clamber/database"
 	"go-clamber/page"
 	"net/url"
@@ -16,7 +17,7 @@ type Crawler struct { // Struct to manage Crawl state in one place.
 	sync.Mutex
 }
 
-func (crawler *Crawler) Crawl(currentPage *page.Page, DB database.Store) {
+func (crawler *Crawler) Crawl(currentPage *page.Page) {
 	if currentPage.Depth <= 0 {
 		return
 	}
@@ -31,7 +32,7 @@ func (crawler *Crawler) Crawl(currentPage *page.Page, DB database.Store) {
 		go func(childPage *page.Page) { // create goroutines for each link found and crawl the child currentPage
 			defer wg.Done()
 
-			crawler.Crawl(childPage, DB)
+			crawler.Crawl(childPage)
 			childPagesChan <- childPage
 		}(childPage)
 	}
@@ -43,7 +44,12 @@ func (crawler *Crawler) Crawl(currentPage *page.Page, DB database.Store) {
 	for childPages := range childPagesChan { // Feed channel values into slice, possibly performance inefficient.
 		currentPage.Children = append(currentPage.Children, childPages)
 	}
-	_ = DB.Create(currentPage)
+
+	err := database.DB.Create(currentPage)
+	if err != nil {
+		fmt.Print(currentPage.Url.String())
+		panic(err)
+	}
 }
 
 func (crawler *Crawler) hasAlreadyCrawled(Url *url.URL) (isPresent bool) {
@@ -51,8 +57,8 @@ func (crawler *Crawler) hasAlreadyCrawled(Url *url.URL) (isPresent bool) {
 		Locks crawl, then returns true/false dependent on Url being in map.
 		If false, we store the Url.
 	*/
-	defer crawler.Unlock()
 	cleanUrl := strings.TrimRight(Url.String(), "/")
+	defer crawler.Unlock()
 	crawler.Lock()
 	_, isPresent = crawler.AlreadyCrawled[cleanUrl]
 	if !isPresent {

@@ -52,7 +52,7 @@ func TestStoreSuite(t *testing.T) {
 func (s *StoreSuite) TestCreatePage() {
 	defer s.store.Close()
 	parsedUrl, _ := url.Parse("https://google.com")
-	err := s.store.Create(&page.Page{
+	err := s.store.CreatePage(&page.Page{
 		Url:  parsedUrl,
 		Body: "",
 	})
@@ -84,7 +84,7 @@ func (s *StoreSuite) TestGet() {
 	if err != nil {
 		s.T().Fatal(err)
 	}
-	pages, err := s.store.Get(testUrl)
+	pages, err := s.store.GetPage(testUrl)
 	if err != nil {
 		s.T().Fatal(err)
 	}

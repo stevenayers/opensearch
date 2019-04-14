@@ -21,14 +21,14 @@ func (search Search) Initiate() {
 	if err != nil {
 		fmt.Print(err)
 	}
-	database.InitStore(&database.DbStore{Db: db})
-	results, err := database.DB.Get(search.Query)
+	database.InitStore(&database.DbStore{})
+	results, err := database.DB.GetPage(search.Query.Url.String())
 	if err != nil {
 		fmt.Print(err)
 	}
 	if len(results) == 0 {
 		crawler := crawl.Crawler{AlreadyCrawled: make(map[string]struct{})}
-		crawler.Crawl(&page.Page{Url: search.Query.Url}, database.DB)
+		crawler.Crawl(&page.Page{Url: search.Query.Url})
 	} else {
 		search.Results = results
 	}

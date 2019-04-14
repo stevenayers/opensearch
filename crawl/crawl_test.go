@@ -1,9 +1,8 @@
 package crawl_test
 
 import (
-	"database/sql"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/neo4j/neo4j-go-driver/neo4j"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"go-clamber/crawl"
@@ -16,27 +15,31 @@ import (
 type StoreSuite struct {
 	suite.Suite
 	store *database.DbStore
-	db    *sql.DB
 }
 
 func (s *StoreSuite) SetupSuite() {
-	db, err := sql.Open("sqlite3", "../database/testing/pages.sqlite")
+	driver, err := neo4j.NewDriver("bolt://localhost:7687", neo4j.BasicAuth("neo4j", "password", ""))
 	if err != nil {
-		s.T().Fatal(err)
+		fmt.Print(err)
 	}
-	s.db = db
-	s.store = &database.DbStore{Db: db}
+	s.store = &database.DbStore{Driver: driver}
+	database.InitStore(s.store)
 }
 
 func (s *StoreSuite) SetupTest() {
-	_, err := s.db.Exec("DELETE FROM pages")
+	session, err := s.store.Driver.Session(neo4j.AccessModeWrite)
 	if err != nil {
 		s.T().Fatal(err)
 	}
+	_, err = session.Run("MATCH (n) DETACH DELETE n", map[string]interface{}{})
+	if err != nil {
+		s.T().Fatal(err)
+	}
+	defer session.Close()
 }
 
 func (s *StoreSuite) TearDownSuite() {
-	err := s.db.Close()
+	err := s.store.Driver.Close()
 	if err != nil {
 		fmt.Print(err)
 	}
@@ -55,13 +58,13 @@ type CrawlTest struct {
 var CrawlTests = []CrawlTest{
 	{"https://golang.org/", 1},
 	{"https://golang.org/", 5},
-	{"https://golang.org/", 10},
+	{"https://golang.org/", 30},
 	{"http://example.edu", 1},
 	{"http://example.edu", 5},
 	{"http://example.edu", 10},
 	{"https://google.com", 1},
 	{"https://google.com", 5},
-	{"https://google.com", 10},
+	{"https://google.com", 30},
 }
 
 var PageReturnTests = []string{
@@ -75,7 +78,7 @@ func (s *StoreSuite) TestAlreadyCrawled() {
 		crawler := crawl.Crawler{AlreadyCrawled: make(map[string]struct{})}
 		rootUrl, _ := url.Parse(test.Url)
 		rootPage := page.Page{Url: rootUrl, Depth: test.Depth}
-		crawler.Crawl(&rootPage, s.store)
+		crawler.Crawl(&rootPage)
 		for Url := range crawler.AlreadyCrawled { // Iterate through crawled AlreadyCrawled and recursively search for each one
 			var countedDepths []int
 			crawledCounter := 0
@@ -90,7 +93,7 @@ func (s *StoreSuite) TestAllPagesReturned() {
 		rootUrl, _ := url.Parse(testUrl)
 		rootPage := page.Page{Url: rootUrl, Depth: 1}
 		Urls, _ := rootPage.FetchChildPages()
-		crawler.Crawl(&rootPage, s.store)
+		crawler.Crawl(&rootPage)
 		assert.Equal(s.T(), len(Urls), len(rootPage.Children), "page.Children and fetch Urls length expected to match.")
 	}
 }
@@ -102,7 +105,7 @@ func recursivelySearchPages(t *testing.T, p *page.Page, Url string, counter *int
 			if v.Children != nil && v.Url.String() == Url { // Check if page has links
 				*depths = append(*depths, v.Depth) // Log the depth it was counted (useful when inspecting data structure)
 				*counter++
-				assert.Greaterf(t, 2, *counter, "%s: Url was counted more than once.", v.Url.String())
+				assert.NotEqualf(t, 2, *counter, "%s: Url was counted more than once.", v.Url.String())
 				recursivelySearchPages(t, v, Url, counter, depths) // search child page
 			}
 		}
