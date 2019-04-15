@@ -50,3 +50,7 @@
   version = "1.7.3"
 
 
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/dgraph-io/dgo"

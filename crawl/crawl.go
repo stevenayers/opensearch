@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"go-clamber/database"
 	"go-clamber/page"
-	"net/url"
 	"strings"
 	"sync"
 )
@@ -47,17 +46,17 @@ func (crawler *Crawler) Crawl(currentPage *page.Page) {
 
 	err := database.DB.Create(currentPage)
 	if err != nil {
-		fmt.Print(currentPage.Url.String())
+		fmt.Print(currentPage.Url)
 		panic(err)
 	}
 }
 
-func (crawler *Crawler) hasAlreadyCrawled(Url *url.URL) (isPresent bool) {
+func (crawler *Crawler) hasAlreadyCrawled(Url string) (isPresent bool) {
 	/*
 		Locks crawl, then returns true/false dependent on Url being in map.
 		If false, we store the Url.
 	*/
-	cleanUrl := strings.TrimRight(Url.String(), "/")
+	cleanUrl := strings.TrimRight(Url, "/")
 	defer crawler.Unlock()
 	crawler.Lock()
 	_, isPresent = crawler.AlreadyCrawled[cleanUrl]

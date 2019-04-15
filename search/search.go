@@ -7,17 +7,26 @@ import (
 	"go-clamber/crawl"
 	"go-clamber/database"
 	"go-clamber/page"
+	"net/url"
 )
 
 type (
 	Search struct {
-		Query   database.Query   `json:"query"`
+		Query   Query            `json:"query"`
 		Results database.Results `json:"results"`
+	}
+
+	Queries []Query
+
+	Query struct {
+		Url                *url.URL `json:"url"`
+		Depth              int      `json:"depth"`
+		AllowExternalLinks bool     `json:"allow_external_links"`
 	}
 )
 
 func (search Search) Initiate() {
-	db, err := sql.Open("sqlite3", "../database/testing/pages.sqlite")
+	_, err := sql.Open("sqlite3", "../database/testing/pages.sqlite")
 	if err != nil {
 		fmt.Print(err)
 	}

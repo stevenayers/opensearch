@@ -12,22 +12,22 @@ import (
 	"path"
 	"regexp"
 	"strings"
-	"time"
 )
 
-type Page struct {
-	Url       *url.URL  `json:"url"`
-	Children  []*Page   `json:"links"`
-	Parent    *Page     `json:"parent"`
-	Depth     int       `json:"depth"`
-	Timestamp time.Time `json:"timestamp"`
-	Body      string    `json:"body"`
-}
+type (
+	Page struct {
+		Url       string  `json:"url,omitempty"`
+		Children  []*Page `json:"-"`
+		Depth     int     `json:"depth,omitempty"`
+		Timestamp int64   `json:"timestamp,omitempty"`
+		Body      string  `json:"body,omitempty"`
+	}
+)
 
 func (page *Page) FetchChildPages() (childPages []*Page, err error) {
-	resp, err := http.Get(page.Url.String())
+	resp, err := http.Get(page.Url)
 	if err != nil {
-		log.Printf("failed to get URL %s: %v", page.Url.String(), err)
+		log.Printf("failed to get URL %s: %v", page.Url, err)
 		return
 	}
 	defer resp.Body.Close()                                               // Closes response body FetchUrls function is done.
@@ -45,15 +45,14 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 	doc.Find("a").Each(func(index int, item *goquery.Selection) {
 		href, ok := item.Attr("href")
 		if ok && IsRelativeUrl(href) && IsRelativeHtml(href) && href != "" {
-			absoluteUrl := ParseRelativeUrl(page.Url, strings.TrimRight(href, "/")) // Standardises URL
+			absoluteUrl := ParseRelativeUrl(page.Url, href) // Standardises URL
 			_, isPresent := localProcessed[absoluteUrl.Path]
 			if !isPresent {
 				localProcessed[absoluteUrl.Path] = struct{}{}
 				childPage := Page{
-					Url:    absoluteUrl,
-					Parent: page,
-					Depth:  page.Depth - 1,
-					Body:   body,
+					Url:   strings.TrimRight(absoluteUrl.String(), "/"),
+					Depth: page.Depth - 1,
+					Body:  body,
 				}
 				childPages = append(childPages, &childPage)
 			}
@@ -72,8 +71,12 @@ func parseHtml(resp *http.Response) (doc *goquery.Document, body string, err err
 	return
 }
 
-func ParseRelativeUrl(rootUrl *url.URL, relativeUrl string) (absoluteUrl *url.URL) {
-	absoluteUrl, err := url.Parse(rootUrl.Scheme + "://" + rootUrl.Host + path.Clean("/"+relativeUrl))
+func ParseRelativeUrl(rootUrl string, relativeUrl string) (absoluteUrl *url.URL) {
+	parsedRootUrl, err := url.Parse(rootUrl)
+	if err != nil {
+		return nil
+	}
+	absoluteUrl, err = url.Parse(parsedRootUrl.Scheme + "://" + parsedRootUrl.Host + path.Clean("/"+relativeUrl))
 	if err != nil {
 		return nil
 	}
