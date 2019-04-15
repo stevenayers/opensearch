@@ -68,22 +68,6 @@
   version = "v1.10.0"
 
 [[projects]]
-  digest = "1:3fe70b42801c8d32fa1fd6989c0ba270358b987926007fdad8e55b2595fc3051"
-  name = "github.com/neo4j-drivers/gobolt"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "0b8728e471cbd11fe5ffa3ae65a467886018012e"
-  version = "v1.7.3"
-
-[[projects]]
-  digest = "1:f58514978026f31b98c85b1028e5ab2c8da27515f0dfbb0493582a9d23def1b5"
-  name = "github.com/neo4j/neo4j-go-driver"
-  packages = ["neo4j"]
-  pruneopts = "UT"
-  revision = "9a2fa5368ea8afb0e22f5ba6d2c9a2512483bd88"
-  version = "v1.7.3"
-
-[[projects]]
   digest = "1:cf31692c14422fa27c83a05292eb5cbe0fb2775972e8f1f8446a71549bd8980b"
   name = "github.com/pkg/errors"
   packages = ["."]
@@ -113,7 +97,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f90933417f4c9c229b62665ead2db0badd702a731aa4a5c270d41d5d7887d35b"
+  digest = "1:1f58de752cd4def0fd9227264ca38e0043467f445c96bbd8c6a93449bae0e303"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -127,7 +111,7 @@
     "trace",
   ]
   pruneopts = "UT"
-  revision = "eb5bcb51f2a31c7d5141d810b70815c05d9c9146"
+  revision = "1da14a5a36f220ea3f03470682b737b1dfd5de22"
 
 [[projects]]
   branch = "master"
@@ -135,7 +119,7 @@
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "97732733099d6a942a73b889770774366de963ed"
+  revision = "3fd5a3612ccd7907f26270fa92579a0f2f76f734"
 
 [[projects]]
   digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
@@ -166,7 +150,7 @@
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
   pruneopts = "UT"
-  revision = "64821d5d210748c883cd2b809589555ae4654203"
+  revision = "d1146b9035b912113a38af3b138eb2af567b2c67"
 
 [[projects]]
   digest = "1:31d87f39886fb38a2b6c097ff3b9f985d6960772170d64a68246f7790e955746"
@@ -215,11 +199,12 @@
   input-imports = [
     "github.com/PuerkitoBio/goquery",
     "github.com/dgraph-io/dgo",
+    "github.com/dgraph-io/dgo/protos/api",
     "github.com/gorilla/mux",
     "github.com/mattn/go-sqlite3",
-    "github.com/neo4j/neo4j-go-driver/neo4j",
     "github.com/stretchr/testify/assert",
     "github.com/stretchr/testify/suite",
+    "google.golang.org/grpc",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
