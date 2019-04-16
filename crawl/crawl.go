@@ -17,6 +17,11 @@ type Crawler struct { // Struct to manage Crawl state in one place.
 }
 
 func (crawler *Crawler) Crawl(currentPage *page.Page) {
+	err := database.DB.Create(currentPage)
+	if err != nil {
+		fmt.Print(currentPage.Url)
+		panic(err)
+	}
 	if currentPage.Depth <= 0 {
 		return
 	}
@@ -30,7 +35,7 @@ func (crawler *Crawler) Crawl(currentPage *page.Page) {
 		wg.Add(1)
 		go func(childPage *page.Page) { // create goroutines for each link found and crawl the child currentPage
 			defer wg.Done()
-
+			//fmt.Printf("---%s\n", childPage.Url)
 			crawler.Crawl(childPage)
 			childPagesChan <- childPage
 		}(childPage)
@@ -42,12 +47,6 @@ func (crawler *Crawler) Crawl(currentPage *page.Page) {
 	}()
 	for childPages := range childPagesChan { // Feed channel values into slice, possibly performance inefficient.
 		currentPage.Children = append(currentPage.Children, childPages)
-	}
-
-	err := database.DB.Create(currentPage)
-	if err != nil {
-		fmt.Print(currentPage.Url)
-		panic(err)
 	}
 }
 

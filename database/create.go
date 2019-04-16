@@ -2,81 +2,90 @@ package database
 
 import (
 	"context"
-	"github.com/dgraph-io/dgo"
 	"github.com/dgraph-io/dgo/protos/api"
+	"github.com/dgraph-io/dgo/y"
 	"go-clamber/page"
 	"log"
 )
 
 func (store *DbStore) Create(currentPage *page.Page) (err error) {
+	var currentUid string
 	ctx := context.Background()
-	txn := store.NewTxn()
-	parentUid, err := store.GetUidByUrl(ctx, txn, currentPage.Url)
-	if parentUid == "" {
-		parentUid, err = store.CreatePage(ctx, txn, currentPage)
-	}
-	err = txn.Commit(ctx)
+	currentUid, err = store.GetOrCreatePage(&ctx, currentPage)
 	if err != nil {
-		txn.Discard(ctx)
+		log.Printf("[ERROR] context: create current page (%s) - message: %s\n", currentPage.Url, err.Error())
+		return
 	}
-	for _, childPage := range currentPage.Children {
+	if currentPage.Parent != nil {
+		var parentUid string
+		parentUid, err = store.GetOrCreatePage(&ctx, currentPage.Parent)
+		if err != nil {
+			log.Printf("[ERROR] context: create parent page (%s) - message: %s\n", currentPage.Parent.Url, err.Error())
+			return
+		}
+		err = store.CreatePredicate(&ctx, parentUid, currentUid)
+		if err != nil {
+			log.Printf("[ERROR] create predicate (%s -> %s) - message: %s\n", parentUid, currentUid, err.Error())
+			return
+		}
+	}
+	return
+}
+
+func (store *DbStore) GetOrCreatePage(ctx *context.Context, currentPage *page.Page) (uid string, err error) {
+	for uid == "" {
+		var assigned *api.Assigned
+		var p []byte
 		txn := store.NewTxn()
-		childUid, err := store.GetUidByUrl(ctx, txn, childPage.Url)
+		uid, err = store.GetUidByUrl(ctx, txn, currentPage.Url)
 		if err != nil {
-			log.Fatal(err)
-			return err
+			return
 		}
-		if childUid == "" {
-			childUid, err = store.CreatePage(ctx, txn, childPage)
+		if uid == "" {
+			p, err = ConvertPageToJson(currentPage)
+			if err != nil {
+				return
+			}
+			mu := &api.Mutation{}
+			mu.SetJson = p
+			assigned, err = txn.Mutate(*ctx, mu)
+			if err != nil {
+				return
+			}
 		}
-		if err != nil {
-			log.Fatal(err)
-			return err
+		err = txn.Commit(*ctx)
+		if uid == "" && err == nil {
+			uid = assigned.Uids["blank-0"]
 		}
-		err = txn.Commit(ctx)
-		if err != nil {
-			txn.Discard(ctx)
-		}
-		txn = store.NewTxn()
-
-		err = store.CreatePredicate(ctx, txn, parentUid, childUid)
-		if err != nil {
-			log.Fatal(err)
-			return err
-		}
-		err = txn.Commit(ctx)
-		if err != nil {
-			txn.Discard(ctx)
-		}
+		txn.Discard(*ctx)
 	}
 	return
 }
 
-func (store *DbStore) CreatePage(ctx context.Context, txn *dgo.Txn, currentPage *page.Page) (uid string, err error) {
-	p, err := ConvertPageToJson(currentPage)
-	mu := &api.Mutation{}
-	mu.SetJson = p
-	assigned, err := txn.Mutate(ctx, mu)
+func (store *DbStore) CreatePredicate(ctx *context.Context, parentUid string, childUid string) (err error) {
+
+	exists, err := store.PredicateExists(*ctx, parentUid, childUid) // false
 	if err != nil {
-		log.Fatal(err)
 		return
 	}
-	uid = assigned.Uids["blank-0"]
-	return
-}
-
-func (store *DbStore) CreatePredicate(ctx context.Context, txn *dgo.Txn, parentUid string, childUid string) (err error) {
-	_, err = txn.Mutate(ctx, &api.Mutation{
-		Set: []*api.NQuad{
-			{
+	for err == y.ErrAborted || !exists {
+		txn := store.NewTxn()
+		_, err = txn.Mutate(*ctx, &api.Mutation{
+			Set: []*api.NQuad{{
 				Subject:   parentUid,
-				Predicate: "links.To",
+				Predicate: "links",
 				ObjectId:  childUid,
-			},
-		}})
-	if err != nil {
-		log.Fatal(err)
-		return
+			}}})
+		if err != nil {
+			return
+		}
+		err = txn.Commit(*ctx)
+		txn.Discard(*ctx)
+
+		exists = true
+		if err == y.ErrConflict {
+			return
+		}
 	}
 	return
 }

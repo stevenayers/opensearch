@@ -76,7 +76,7 @@ package database_test
 //	}
 //	currentPage, err := s.store.GetPageByUid(ctx, parentUid)
 //	if err != nil {
-//		log.Fatal(err)
+//		fmt.Print(err)
 //		return
 //	}
 //	assert.Equal(s.T(), p, *currentPage, "Expected same input as output")
@@ -96,7 +96,7 @@ package database_test
 //	}
 //	currentPage, err := s.store.GetPageByUid(ctx, uid)
 //	if err != nil {
-//		log.Fatal(err)
+//		fmt.Print(err)
 //		return
 //	}
 //	assert.Equal(s.T(), p, *currentPage, "Expected same input as output")

@@ -5,22 +5,22 @@ package page
 
 import (
 	"github.com/PuerkitoBio/goquery"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
 	"path"
 	"regexp"
 	"strings"
+	"time"
 )
 
 type (
 	Page struct {
 		Url       string  `json:"url,omitempty"`
 		Children  []*Page `json:"-"`
-		Depth     int     `json:"depth,omitempty"`
-		Timestamp int64   `json:"timestamp,omitempty"`
-		Body      string  `json:"body,omitempty"`
+		Parent    *Page
+		Depth     int   `json:"depth,omitempty"`
+		Timestamp int64 `json:"timestamp,omitempty"`
 	}
 )
 
@@ -34,12 +34,11 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 	if !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") { // Check if HTML file
 		return
 	}
-	doc, body, err := parseHtml(resp)
+	doc, err := parseHtml(resp)
 	if err != nil {
 		log.Printf("failed to parse HTML: %v", err)
 		return
 	}
-
 	localProcessed := make(map[string]struct{}) // Ensures we don't store the same Url twice and
 	// end up spawning 2 goroutines for same result
 	doc.Find("a").Each(func(index int, item *goquery.Selection) {
@@ -50,9 +49,10 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 			if !isPresent {
 				localProcessed[absoluteUrl.Path] = struct{}{}
 				childPage := Page{
-					Url:   strings.TrimRight(absoluteUrl.String(), "/"),
-					Depth: page.Depth - 1,
-					Body:  body,
+					Url:       strings.TrimRight(absoluteUrl.String(), "/"),
+					Depth:     page.Depth - 1,
+					Parent:    page,
+					Timestamp: time.Now().Unix(),
 				}
 				childPages = append(childPages, &childPage)
 			}
@@ -61,13 +61,9 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 	return
 }
 
-func parseHtml(resp *http.Response) (doc *goquery.Document, body string, err error) {
+func parseHtml(resp *http.Response) (doc *goquery.Document, err error) {
+
 	doc, err = goquery.NewDocumentFromReader(resp.Body)
-	if err != nil {
-		return
-	}
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	body = string(bodyBytes)
 	return
 }
 

@@ -2,8 +2,8 @@ package database
 
 import (
 	"encoding/json"
+	"fmt"
 	"go-clamber/page"
-	"log"
 )
 
 type (
@@ -11,8 +11,10 @@ type (
 		Uid       string      `json:"uid,omitempty"`
 		Url       string      `json:"url,omitempty"`
 		Timestamp int64       `json:"timestamp,omitempty"`
-		Body      string      `json:"body,omitempty"`
 		Children  []*JSONPage `json:"child.Of,omitempty"`
+	}
+	PredicateCount struct {
+		Matching int `json:"matching"`
 	}
 )
 
@@ -20,11 +22,10 @@ func ConvertPageToJson(currentPage *page.Page) (pb []byte, err error) {
 	p := JSONPage{
 		Url:       currentPage.Url,
 		Timestamp: currentPage.Timestamp,
-		Body:      currentPage.Body,
 	}
 	pb, err = json.Marshal(p)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Print(err)
 	}
 	return
 }
@@ -32,11 +33,13 @@ func ConvertPageToJson(currentPage *page.Page) (pb []byte, err error) {
 func ConvertJsonToPage(pb []byte) (currentPage *page.Page, err error) {
 	jsonMap := make(map[string][]JSONPage)
 	err = json.Unmarshal(pb, &jsonMap)
-	jsonPage := jsonMap["result"][0]
-	currentPage = &page.Page{
-		Url:       jsonPage.Url,
-		Timestamp: jsonPage.Timestamp,
-		Body:      jsonPage.Body,
+	jsonPages := jsonMap["result"]
+	if len(jsonPages) > 0 {
+		currentPage = &page.Page{
+			Url:       jsonPages[0].Url,
+			Timestamp: jsonPages[0].Timestamp,
+		}
 	}
+
 	return
 }

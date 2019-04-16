@@ -8,6 +8,7 @@ import (
 	"go-clamber/database"
 	"go-clamber/page"
 	"testing"
+	"time"
 )
 
 type StoreSuite struct {
@@ -57,15 +58,12 @@ type CrawlTest struct {
 }
 
 var CrawlTests = []CrawlTest{
-	{"https://golang.org/", 1},
-	{"https://golang.org/", 5},
-	{"https://golang.org/", 30},
+	{"https://golang.org", 1},
+	{"https://golang.org", 3},
 	{"http://example.edu", 1},
-	{"http://example.edu", 5},
-	{"http://example.edu", 10},
+	{"http://example.edu", 3},
 	{"https://google.com", 1},
-	{"https://google.com", 5},
-	{"https://google.com", 30},
+	{"https://google.com", 3},
 }
 
 var PageReturnTests = []string{
@@ -76,8 +74,9 @@ var PageReturnTests = []string{
 
 func (s *StoreSuite) TestAlreadyCrawled() {
 	for _, test := range CrawlTests {
+		//fmt.Printf("-%s\n", test.Url)
 		crawler := crawl.Crawler{AlreadyCrawled: make(map[string]struct{})}
-		rootPage := page.Page{Url: test.Url, Depth: test.Depth}
+		rootPage := page.Page{Url: test.Url, Depth: test.Depth, Timestamp: time.Now().Unix()}
 		crawler.Crawl(&rootPage)
 		for Url := range crawler.AlreadyCrawled { // Iterate through crawled AlreadyCrawled and recursively search for each one
 			var countedDepths []int
@@ -90,7 +89,7 @@ func (s *StoreSuite) TestAlreadyCrawled() {
 func (s *StoreSuite) TestAllPagesReturned() {
 	for _, testUrl := range PageReturnTests {
 		crawler := crawl.Crawler{AlreadyCrawled: make(map[string]struct{})}
-		rootPage := page.Page{Url: testUrl, Depth: 1}
+		rootPage := page.Page{Url: testUrl, Depth: 1, Timestamp: time.Now().Unix()}
 		Urls, _ := rootPage.FetchChildPages()
 		crawler.Crawl(&rootPage)
 		assert.Equal(s.T(), len(Urls), len(rootPage.Children), "page.Children and fetch Urls length expected to match.")

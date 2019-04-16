@@ -7,7 +7,6 @@ import (
 	"github.com/dgraph-io/dgo/protos/api"
 	"go-clamber/page"
 	"google.golang.org/grpc"
-	"log"
 )
 
 type (
@@ -15,7 +14,7 @@ type (
 
 	Store interface {
 		Create(currentPage *page.Page) (err error)
-		CreatePage(ctx context.Context, txn *dgo.Txn, currentPage *page.Page) (uid string, err error)
+		GetOrCreatePage(ctx *context.Context, currentPage *page.Page) (uid string, err error)
 		DeleteAll() (err error)
 	}
 
@@ -28,8 +27,10 @@ type (
 func (store *DbStore) SetSchema() (err error) {
 	op := &api.Operation{}
 	op.Schema = `
-	url: string @index(exact) .
-    links.To: uid @count .
+	url: string @index(exact) @upsert .
+	timestamp: int .
+	body: string .
+    links: uid @count .
 	`
 	ctx := context.TODO()
 	err = store.Alter(ctx, op)
@@ -47,7 +48,7 @@ func (store *DbStore) DeleteAll() (err error) {
 func InitStore(s *DbStore) {
 	conn, err := grpc.Dial("localhost:9080", grpc.WithInsecure())
 	if err != nil {
-		log.Fatal(err)
+		fmt.Print(err)
 	}
 	s.Connection = conn
 	s.Dgraph = dgo.NewDgraphClient(api.NewDgraphClient(conn))
