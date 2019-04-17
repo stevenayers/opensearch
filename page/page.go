@@ -16,11 +16,11 @@ import (
 
 type (
 	Page struct {
+		Uid       string  `json:"uid,omitempty"`
 		Url       string  `json:"url,omitempty"`
 		Children  []*Page `json:"-"`
-		Parent    *Page
-		Depth     int   `json:"depth,omitempty"`
-		Timestamp int64 `json:"timestamp,omitempty"`
+		Parent    *Page   `json:"-"`
+		Timestamp int64   `json:"timestamp,omitempty"`
 	}
 )
 
@@ -50,7 +50,6 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 				localProcessed[absoluteUrl.Path] = struct{}{}
 				childPage := Page{
 					Url:       strings.TrimRight(absoluteUrl.String(), "/"),
-					Depth:     page.Depth - 1,
 					Parent:    page,
 					Timestamp: time.Now().Unix(),
 				}

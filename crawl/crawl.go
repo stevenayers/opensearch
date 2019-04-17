@@ -16,13 +16,13 @@ type Crawler struct { // Struct to manage Crawl state in one place.
 	sync.Mutex
 }
 
-func (crawler *Crawler) Crawl(currentPage *page.Page) {
+func (crawler *Crawler) Crawl(currentPage *page.Page, depth int) {
 	err := database.DB.Create(currentPage)
 	if err != nil {
 		fmt.Print(currentPage.Url)
 		panic(err)
 	}
-	if currentPage.Depth <= 0 {
+	if depth <= 0 {
 		return
 	}
 	if crawler.hasAlreadyCrawled(currentPage.Url) {
@@ -36,7 +36,7 @@ func (crawler *Crawler) Crawl(currentPage *page.Page) {
 		go func(childPage *page.Page) { // create goroutines for each link found and crawl the child currentPage
 			defer wg.Done()
 			//fmt.Printf("---%s\n", childPage.Url)
-			crawler.Crawl(childPage)
+			crawler.Crawl(childPage, depth-1)
 			childPagesChan <- childPage
 		}(childPage)
 	}

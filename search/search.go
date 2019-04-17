@@ -12,8 +12,8 @@ import (
 
 type (
 	Search struct {
-		Query   Query            `json:"query"`
-		Results database.Results `json:"results"`
+		Query   Query        `json:"query"`
+		Results []*page.Page `json:"results"`
 	}
 
 	Queries []Query

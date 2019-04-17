@@ -37,60 +37,44 @@ This is an extension of: https://github.com/stevenayers/golang-webcrawler
 API will return
 ```json
 {
-  "query": {
+    "query": {
       "url": "https://example.com",
       "depth": 1, 
       "display_depth": 10,
       "allow_external_links": false
-  },
-  "status": {
+    },
+    "status": {
       "message": "5 pages found at a depth of 1.",
       "code": "200"
-  },
-  "results": [
+    },
+    "results": [
         {
             "URL": "https://example.com",
             "timestamp": "<time>",
-            "depth": 0,       
             "links": [
-                "https://example.com/about",
-                "https://example.com/contact",
-                "https://example.com/faq",
-                "https://example.com/offices"
-            ],
-            "body": null 
-        },
-        {
-            "URL": "https://example.com/about",
-            "depth": 1,
-            "timestamp": "<time>",
-            "links": [],
-            "body": null
-        },
-        {
-            "URL": "https://example.com/contact",
-            "depth": 1,
-            "timestamp": "<time>",
-            "links": [],
-            "body": null
-        },
-        {
-            "URL": "https://example.com/faq",
-            "depth": 1,
-            "timestamp": "<time>",
-            "links": [],
-            "body": null
-        },
-        {
-            "URL": "https://example.com/offices",
-            "depth": 1,
-            "timestamp": "<time>",
-            "links": [],
-            "body": null
+                {
+                    "URL": "https://example.com/about",
+                    "timestamp": "<time>",
+                    "links": []
+                },
+                {
+                    "URL": "https://example.com/contact",
+                    "timestamp": "<time>",
+                    "links": []
+                },
+                {
+                    "URL": "https://example.com/faq",
+                    "timestamp": "<time>",
+                    "links": []
+                },
+                {
+                    "URL": "https://example.com/offices",
+                    "timestamp": "<time>",
+                    "links": []
+                }
+            ]
         }
-        
-  ]
-  
+    ]
 }
 ```
 This will specify the starting URL. Maybe it would be a good idea to put a depth limit on this and option to search just the domain or all links. The sitemap service will use the map_id to identify which map to render. This would allow us to generate maps for the entire web, or just for singular sites.
