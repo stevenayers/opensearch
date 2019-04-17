@@ -1,11 +1,11 @@
-# go-clamber
+# Clamber
 A distributed system designed to crawl the internet, fronted by a d3js sitemap for visualisation.
 
 Proposed tech stack:
 - Golang
 - HTTP/REST
 - JSON
-- RDBMS (SQLite for development)
+- [Dgraph](https://dgraph.io)
 
 This is an extension of: https://github.com/stevenayers/golang-webcrawler
 ## Design
@@ -106,3 +106,22 @@ allow_external_links (boolean) - Enables clamber to crawl outside of the website
 5. Parse page
 6. Update URL record with page field to database
 7. Spawn new goroutine for child links
+
+
+
+## Data Model
+
+### Mutations
+* Create single node with no predicates to existing nodes.
+* Create singular node with a predicate to the parent node in that crawl sequence.
+* Create predicate between two existing nodes
+* Mutations will always be made with predicates facing upstream (eg. childPage -> parentPage)
+
+### Queries
+* Retrieve node by URL
+* Retrieve node by Uid
+* Recursive retrieval (reverse predicate calls)
+
+### Questions
+* What happens if the creation of a node fails?
+* How do you manage predicates to a failed parent node?

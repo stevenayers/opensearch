@@ -48,11 +48,7 @@ func (store *DbStore) PredicateExists(ctx context.Context, parentUid string, chi
 	}
 	edges := jsonMap["edges"]
 	if len(edges) > 0 {
-		if edges[0].Matching > 0 {
-			exists = true
-		} else {
-			exists = false
-		}
+		exists = edges[0].Matching > 0
 	} else {
 		exists = false
 	}

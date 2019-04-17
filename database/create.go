@@ -68,7 +68,7 @@ func (store *DbStore) CreatePredicate(ctx *context.Context, parentUid string, ch
 	if err != nil {
 		return
 	}
-	for err == y.ErrAborted || !exists {
+	for !exists {
 		txn := store.NewTxn()
 		_, err = txn.Mutate(*ctx, &api.Mutation{
 			Set: []*api.NQuad{{
@@ -82,9 +82,13 @@ func (store *DbStore) CreatePredicate(ctx *context.Context, parentUid string, ch
 		err = txn.Commit(*ctx)
 		txn.Discard(*ctx)
 
-		exists = true
-		if err == y.ErrConflict {
+		switch err {
+		case y.ErrAborted:
+
+		case y.ErrConflict:
 			return
+		default:
+			exists = true
 		}
 	}
 	return

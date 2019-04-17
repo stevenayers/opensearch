@@ -74,7 +74,7 @@ var PageReturnTests = []string{
 
 func (s *StoreSuite) TestAlreadyCrawled() {
 	for _, test := range CrawlTests {
-		//fmt.Printf("-%s\n", test.Url)
+		fmt.Printf("- %s - %d \n", test.Url, test.Depth)
 		crawler := crawl.Crawler{AlreadyCrawled: make(map[string]struct{})}
 		rootPage := page.Page{Url: test.Url, Depth: test.Depth, Timestamp: time.Now().Unix()}
 		crawler.Crawl(&rootPage)
