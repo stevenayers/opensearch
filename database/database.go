@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"github.com/dgraph-io/dgo"
 	"github.com/dgraph-io/dgo/protos/api"
-	"github.com/dgraph-io/dgo/y"
 	"go-clamber/page"
 	"google.golang.org/grpc"
 	"log"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -27,7 +27,7 @@ type (
 
 	DbStore struct {
 		*dgo.Dgraph
-		Connection *grpc.ClientConn
+		Connection []*grpc.ClientConn
 	}
 
 	JsonPage struct {
@@ -45,12 +45,18 @@ type (
 var DB Store
 
 func InitStore(s *DbStore) {
-	conn, err := grpc.Dial("63.32.45.164:9080", grpc.WithInsecure())
+	conn1, err := grpc.Dial("localhost:9080", grpc.WithInsecure())
+	conn2, err := grpc.Dial("localhost:9080", grpc.WithInsecure())
+	conn3, err := grpc.Dial("localhost:9080", grpc.WithInsecure())
 	if err != nil {
 		fmt.Print(err)
 	}
-	s.Connection = conn
-	s.Dgraph = dgo.NewDgraphClient(api.NewDgraphClient(conn))
+	s.Connection = []*grpc.ClientConn{conn1, conn2, conn3}
+	conns := []api.DgraphClient{}
+	for _, conn := range s.Connection {
+		conns = append(conns, api.NewDgraphClient(conn))
+	}
+	s.Dgraph = dgo.NewDgraphClient(conns[0], conns[1], conns[2])
 	DB = s
 }
 
@@ -163,8 +169,10 @@ func (store *DbStore) Create(currentPage *page.Page) (err error) {
 		}
 		err = store.CheckOrCreatePredicate(&ctx, parentUid, currentUid)
 		if err != nil {
-			log.Printf("[ERROR] create predicate (%s -> %s) - message: %s\n", parentUid, currentUid, err.Error())
-			return
+			if !strings.Contains(err.Error(), "Transaction has been aborted. Please retry.") {
+				log.Printf("[ERROR] create predicate (%s -> %s) - message: %s\n", parentUid, currentUid, err.Error())
+				return
+			}
 		}
 	}
 	return
@@ -215,13 +223,14 @@ func (store *DbStore) FindOrCreateNode(ctx *context.Context, currentPage *page.P
 			}
 		}
 		err = txn.Commit(*ctx)
+		txn.Discard(*ctx)
 		if uid == "" && err == nil {
 			uid = assigned.Uids["blank-0"]
 		}
 		if uid != "" {
 			currentPage.Uid = uid
 		}
-		txn.Discard(*ctx)
+
 	}
 	return
 }
@@ -244,11 +253,12 @@ func (store *DbStore) CheckPredicate(ctx *context.Context, txn *dgo.Txn, parentU
 
 func (store *DbStore) CheckOrCreatePredicate(ctx *context.Context, parentUid string, childUid string) (err error) {
 	txn := store.NewTxn()
+	defer txn.Discard(*ctx)
 	exists, err := store.CheckPredicate(ctx, txn, parentUid, childUid)
 	if err != nil {
 		return
 	}
-	for !exists {
+	if !exists {
 		_, err = txn.Mutate(*ctx, &api.Mutation{
 			Set: []*api.NQuad{{
 				Subject:   parentUid,
@@ -258,16 +268,7 @@ func (store *DbStore) CheckOrCreatePredicate(ctx *context.Context, parentUid str
 		if err != nil {
 			return
 		}
-		err = txn.Commit(*ctx)
-		txn.Discard(*ctx)
-		switch err {
-		case y.ErrAborted:
-
-		case y.ErrConflict:
-			return
-		default:
-			exists = true
-		}
+		txn.Commit(*ctx)
 	}
 	return
 }

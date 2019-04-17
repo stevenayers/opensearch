@@ -57,9 +57,11 @@ func (s *StoreSuite) SetupTest() {
 }
 
 func (s *StoreSuite) TearDownSuite() {
-	err := s.store.Connection.Close()
-	if err != nil {
-		fmt.Print(err)
+	for _, conn := range s.store.Connection {
+		err := conn.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
 	}
 }
 

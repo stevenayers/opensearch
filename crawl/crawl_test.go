@@ -24,12 +24,12 @@ type (
 
 var (
 	CrawlTests = []CrawlTest{
-		{"https://golang.org", 1},
-		//		{"https://golang.org", 3},
+		{"https://golang.org", 5},
+		{"https://golang.org", 10},
 		{"http://example.edu", 1},
 		{"http://example.edu", 3},
-		{"https://google.com", 1},
-		{"https://google.com", 3},
+		{"https://google.com", 5},
+		{"https://google.com", 10},
 	}
 
 	PageReturnTests = []string{
@@ -64,9 +64,11 @@ func (s *StoreSuite) SetupTest() {
 }
 
 func (s *StoreSuite) TearDownSuite() {
-	err := s.store.Connection.Close()
-	if err != nil {
-		fmt.Print(err)
+	for _, conn := range s.store.Connection {
+		err := conn.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
 	}
 }
 
