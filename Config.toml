@@ -1,13 +1,13 @@
 [database]
 
   [[database.connections]]
-    host = "localhost"
+    host = "18.202.24.55"
     port = 9080
 
   [[database.connections]]
-    host = "localhost"
+    host = "18.202.24.55"
     port = 9080
 
 [general]
   max_goroutines = 0
-  port = 8080
+  port = 8000

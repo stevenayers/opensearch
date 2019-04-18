@@ -33,7 +33,6 @@ func TestSearchHandler(t *testing.T) {
 		q := req.URL.Query()
 		q.Add("url", test.Url)
 		q.Add("depth", strconv.Itoa(test.Depth))
-		q.Add("allow_external_links", strconv.FormatBool(test.AllowExternalLinks))
 		req.URL.RawQuery = q.Encode()
 		response := httptest.NewRecorder()
 		routes.NewRouter().ServeHTTP(response, req)

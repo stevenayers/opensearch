@@ -11,7 +11,10 @@ import (
 func main() {
 	config := conf.GetConfig()
 
-	fmt.Print(config)
 	router := routes.NewRouter()
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", config.General.Port), router))
+	log.Printf("Listening on port %d...", config.General.Port)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", config.General.Port), router)
+	if err != nil {
+		log.Fatal(err)
+	}
 }

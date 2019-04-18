@@ -27,7 +27,7 @@ type (
 )
 
 var (
-	config = flag.String("config", "Config.toml", "Config file path")
+	config = flag.String("config", "../Config.toml", "Config file path")
 )
 
 func GetConfig() (conf Config) {

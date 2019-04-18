@@ -4,41 +4,41 @@ import (
 	"clamber/crawl"
 	"clamber/database"
 	"clamber/page"
-	"database/sql"
+	"context"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
-	"net/url"
+	"log"
 )
 
 type (
 	Search struct {
-		Query   Query        `json:"query"`
-		Results []*page.Page `json:"results"`
+		Query   Query  `json:"query"`
+		Results []byte `json:"results"`
 	}
 
 	Queries []Query
 
 	Query struct {
-		Url                *url.URL `json:"url"`
-		Depth              int      `json:"depth"`
-		AllowExternalLinks bool     `json:"allow_external_links"`
+		Url                string `json:"url"`
+		Depth              int    `json:"depth"`
+		AllowExternalLinks bool   `json:"allow_external_links"`
 	}
 )
 
 func (search Search) Initiate() {
-	_, err := sql.Open("sqlite3", "../database/testing/pages.sqlite")
-	if err != nil {
-		fmt.Print(err)
-	}
+	store := database.DbStore{}
 	database.InitStore(&database.DbStore{})
-	results, err := database.DB.GetPage(search.Query.Url.String())
+	ctx := context.Background()
+	txn := store.NewTxn()
+	result, err := database.DB.FindNode(&ctx, txn, search.Query.Url, search.Query.Depth)
 	if err != nil {
 		fmt.Print(err)
 	}
-	if len(results) == 0 {
+	if result == nil {
+		log.Print("Could not find node with required depth, initiating search...")
 		crawler := crawl.Crawler{AlreadyCrawled: make(map[string]struct{})}
-		crawler.Crawl(&page.Page{Url: search.Query.Url})
-	} else {
-		search.Results = results
+		result = &page.Page{Url: search.Query.Url}
+		crawler.Crawl(result, search.Query.Depth)
 	}
+	json, err := database.SerializePage(result)
+	search.Results = json
 }

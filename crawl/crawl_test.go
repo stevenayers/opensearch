@@ -24,7 +24,7 @@ type (
 
 var (
 	CrawlTests = []CrawlTest{
-		{"https://golang.org", 1},
+		{"https://golang.org", 5},
 		//{"https://golang.org", 10},
 		//{"http://example.edu", 1},
 		//{"http://example.edu", 3},

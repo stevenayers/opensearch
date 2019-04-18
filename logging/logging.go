@@ -20,7 +20,7 @@ func newRichResponseWriter(w http.ResponseWriter) *richResponseWriter {
 	return &richResponseWriter{w, http.StatusOK}
 }
 
-func HttpLogger(handler http.Handler) http.Handler {
+func Logger(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		rw := newRichResponseWriter(w)
