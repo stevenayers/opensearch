@@ -4,9 +4,9 @@ Controls the crawling through a website's structure, also manages the crawl stat
 package crawl
 
 import (
+	"clamber/database"
+	"clamber/page"
 	"fmt"
-	"go-clamber/database"
-	"go-clamber/page"
 	"strings"
 	"sync"
 )

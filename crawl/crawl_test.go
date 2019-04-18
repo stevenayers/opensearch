@@ -1,12 +1,12 @@
 package crawl_test
 
 import (
+	"clamber/crawl"
+	"clamber/database"
+	"clamber/page"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"go-clamber/crawl"
-	"go-clamber/database"
-	"go-clamber/page"
 	"testing"
 	"time"
 )
@@ -24,12 +24,12 @@ type (
 
 var (
 	CrawlTests = []CrawlTest{
-		{"https://golang.org", 5},
-		{"https://golang.org", 10},
-		{"http://example.edu", 1},
-		{"http://example.edu", 3},
-		{"https://google.com", 5},
-		{"https://google.com", 10},
+		{"https://golang.org", 1},
+		//{"https://golang.org", 10},
+		//{"http://example.edu", 1},
+		//{"http://example.edu", 3},
+		//{"https://google.com", 5},
+		//{"https://google.com", 10},
 	}
 
 	PageReturnTests = []string{

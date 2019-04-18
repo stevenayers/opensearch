@@ -1,12 +1,13 @@
 package database
 
 import (
+	"clamber/conf"
+	"clamber/page"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/dgraph-io/dgo"
 	"github.com/dgraph-io/dgo/protos/api"
-	"go-clamber/page"
 	"google.golang.org/grpc"
 	"log"
 	"strconv"
@@ -45,18 +46,17 @@ type (
 var DB Store
 
 func InitStore(s *DbStore) {
-	conn1, err := grpc.Dial("localhost:9080", grpc.WithInsecure())
-	conn2, err := grpc.Dial("localhost:9080", grpc.WithInsecure())
-	conn3, err := grpc.Dial("localhost:9080", grpc.WithInsecure())
-	if err != nil {
-		fmt.Print(err)
+	config := conf.GetConfig()
+	var clients []api.DgraphClient
+	for _, connConfig := range config.Database.Connections {
+		connString := fmt.Sprintf("%s:%d", connConfig.Host, connConfig.Port)
+		conn, err := grpc.Dial(connString, grpc.WithInsecure())
+		if err != nil {
+			fmt.Print(err)
+		}
+		clients = append(clients, api.NewDgraphClient(conn))
 	}
-	s.Connection = []*grpc.ClientConn{conn1, conn2, conn3}
-	conns := []api.DgraphClient{}
-	for _, conn := range s.Connection {
-		conns = append(conns, api.NewDgraphClient(conn))
-	}
-	s.Dgraph = dgo.NewDgraphClient(conns[0], conns[1], conns[2])
+	s.Dgraph = dgo.NewDgraphClient(clients...)
 	DB = s
 }
 

@@ -1,9 +1,9 @@
 package routes
 
 import (
+	"clamber/handlers"
+	"clamber/logging"
 	"github.com/gorilla/mux"
-	"go-clamber/handlers"
-	"go-clamber/logging"
 	"net/http"
 )
 

@@ -1,8 +1,8 @@
 package page_test
 
 import (
+	"clamber/page"
 	"github.com/stretchr/testify/assert"
-	"go-clamber/page"
 	"net/url"
 	"testing"
 )

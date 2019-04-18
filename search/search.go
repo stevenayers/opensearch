@@ -1,12 +1,12 @@
 package search
 
 import (
+	"clamber/crawl"
+	"clamber/database"
+	"clamber/page"
 	"database/sql"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
-	"go-clamber/crawl"
-	"go-clamber/database"
-	"go-clamber/page"
 	"net/url"
 )
 

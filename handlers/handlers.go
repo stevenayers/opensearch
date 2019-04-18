@@ -1,10 +1,10 @@
 package handlers
 
 import (
+	"clamber/database"
+	"clamber/search"
 	"encoding/json"
 	"github.com/gorilla/mux"
-	"go-clamber/database"
-	"go-clamber/search"
 	"net/http"
 	"net/url"
 	"strconv"

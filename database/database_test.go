@@ -1,13 +1,13 @@
 package database_test
 
 import (
+	"clamber/crawl"
+	"clamber/database"
+	"clamber/page"
 	"context"
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"go-clamber/crawl"
-	"go-clamber/database"
-	"go-clamber/page"
 	"testing"
 	"time"
 )

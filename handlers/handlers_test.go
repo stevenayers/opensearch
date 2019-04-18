@@ -1,8 +1,8 @@
 package handlers_test
 
 import (
+	"clamber/routes"
 	"github.com/stretchr/testify/assert"
-	"go-clamber/routes"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
