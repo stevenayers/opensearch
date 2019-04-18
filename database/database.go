@@ -169,8 +169,9 @@ func (store *DbStore) Create(currentPage *page.Page) (err error) {
 		}
 		err = store.CheckOrCreatePredicate(&ctx, parentUid, currentUid)
 		if err != nil {
-			if !strings.Contains(err.Error(), "Transaction has been aborted. Please retry.") {
-				log.Printf("[ERROR] create predicate (%s -> %s) - message: %s\n", parentUid, currentUid, err.Error())
+			log.Printf("[ERROR] create predicate (%s -> %s) - message: %s\n", parentUid, currentUid, err.Error())
+			if !strings.Contains(err.Error(), "Transaction has been aborted. Please retry.") &&
+				!strings.Contains(err.Error(), "Transaction is too old") {
 				return
 			}
 		}
@@ -252,23 +253,29 @@ func (store *DbStore) CheckPredicate(ctx *context.Context, txn *dgo.Txn, parentU
 }
 
 func (store *DbStore) CheckOrCreatePredicate(ctx *context.Context, parentUid string, childUid string) (err error) {
-	txn := store.NewTxn()
-	defer txn.Discard(*ctx)
-	exists, err := store.CheckPredicate(ctx, txn, parentUid, childUid)
-	if err != nil {
-		return
-	}
-	if !exists {
-		_, err = txn.Mutate(*ctx, &api.Mutation{
-			Set: []*api.NQuad{{
-				Subject:   parentUid,
-				Predicate: "links",
-				ObjectId:  childUid,
-			}}})
+	attempts := 10
+	exists := false
+	for !exists && attempts > 0 {
+		attempts--
+		txn := store.NewTxn()
+		exists, err = store.CheckPredicate(ctx, txn, parentUid, childUid)
 		if err != nil {
 			return
 		}
-		txn.Commit(*ctx)
+		if !exists {
+			_, err = txn.Mutate(*ctx, &api.Mutation{
+				Set: []*api.NQuad{{
+					Subject:   parentUid,
+					Predicate: "links",
+					ObjectId:  childUid,
+				}}})
+			if err != nil && attempts <= 0 {
+				txn.Discard(*ctx)
+				return
+			}
+			txn.Commit(*ctx)
+			txn.Discard(*ctx)
+		}
 	}
 	return
 }
