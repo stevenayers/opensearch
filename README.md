@@ -5,6 +5,7 @@ Proposed tech stack:
 - Golang
 - HTTP/REST
 - JSON
+- ~RDBMS~
 - [Dgraph](https://dgraph.io)
 
 This is an extension of: https://github.com/stevenayers/golang-webcrawler
