@@ -13,6 +13,7 @@ This is an extension of: https://github.com/stevenayers/golang-webcrawler
 
 ### Roadmap (order of priority)
 - Fix and close all issues
+- Update design documentation & add getting started section.
 - Improve testing of handlers
 - Check safety of recursive functions
 - Separate out http client into a different package
