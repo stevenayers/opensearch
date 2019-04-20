@@ -1,4 +1,4 @@
-# Clamber
+# clamber
 A distributed system designed to crawl the internet, fronted by a d3js sitemap for visualisation.
 
 Proposed tech stack:
@@ -11,12 +11,18 @@ Proposed tech stack:
 This is an extension of: https://github.com/stevenayers/golang-webcrawler
 ## Design
 
+### Roadmap (order of priority)
+- Fix and close all issues
+- Improve testing of handlers
+- Check safety of recursive functions
+- Separate out http client into a different package
+
 ### Goals
 - Must be able to crawl internet infinitely, just domain based or on a fixed length
 - TDD will be used for development
 - Must be able to cater to pages changing and updating the sitemap accordingly.
 
-### Workflow
+### Workflow (out of date)
 ![app-workflow](docs/imgs/go-clamber-simple.png)
 
 
