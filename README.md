@@ -1,5 +1,5 @@
 # clamber
-A distributed system designed to crawl the internet, fronted by a d3js sitemap for visualisation.
+A distributed system designed to crawl the internet.
 
 Proposed tech stack:
 - Golang
