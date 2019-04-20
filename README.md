@@ -2,6 +2,7 @@
 A distributed system designed to crawl the internet.
 
 Proposed tech stack:
+- Design as a monolith first, move to distributed where/when necessary.
 - Golang
 - HTTP/REST
 - JSON
