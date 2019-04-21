@@ -34,7 +34,7 @@ var DefinedRoutes = Routes{
 func NewRouter() *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	for _, route := range DefinedRoutes {
-		handler := logging.Logger(route.HandlerFunc)
+		handler := logger.Logger(route.HandlerFunc, route.Name)
 		router.
 			Methods(route.Method).
 			Path(route.Pattern).
