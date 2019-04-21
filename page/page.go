@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"path"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 )
@@ -18,7 +19,7 @@ type (
 	Page struct {
 		Uid       string  `json:"uid,omitempty"`
 		Url       string  `json:"url,omitempty"`
-		Children  []*Page `json:"-"`
+		Children  []*Page `json:"links,omitempty"`
 		Parent    *Page   `json:"-"`
 		Timestamp int64   `json:"timestamp,omitempty"`
 	}
@@ -58,6 +59,23 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 		}
 	})
 	return
+}
+
+func (page *Page) MaxDepth() (countDepth int) {
+	if page.Children != nil {
+		var childDepths []int
+		for _, childPage := range page.Children {
+			childDepths = append(childDepths, childPage.MaxDepth())
+		}
+		return MaxIntSlice(childDepths) + 1
+	} else {
+		return 0
+	}
+}
+
+func MaxIntSlice(v []int) int {
+	sort.Ints(v)
+	return v[len(v)-1]
 }
 
 func parseHtml(resp *http.Response) (doc *goquery.Document, err error) {

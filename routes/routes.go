@@ -2,7 +2,7 @@ package routes
 
 import (
 	"clamber/handlers"
-	"clamber/logging"
+	"clamber/logger"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -21,15 +21,13 @@ type (
 
 var DefinedRoutes = Routes{
 	Route{
-		"Search",
+		"Initiate",
 		"GET",
 		"/search",
 		handlers.Search,
 		[]string{
 			"url", "{url}",
-			"depth", "{depth}",
-			"allow_external_links", "{allow_external_links}",
-		},
+			"depth", "{depth}"},
 	},
 }
 

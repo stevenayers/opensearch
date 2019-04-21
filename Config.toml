@@ -1,11 +1,11 @@
 [database]
 
   [[database.connections]]
-    host = "18.202.24.55"
+    host = "localhost"
     port = 9080
 
   [[database.connections]]
-    host = "18.202.24.55"
+    host = "localhost"
     port = 9080
 
 [general]

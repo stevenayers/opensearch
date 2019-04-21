@@ -45,7 +45,7 @@ type (
 
 var DB Store
 
-func InitStore(s *DbStore) {
+func Connect(s *DbStore) {
 	config := conf.GetConfig()
 	var clients []api.DgraphClient
 	for _, connConfig := range config.Database.Connections {
@@ -58,78 +58,6 @@ func InitStore(s *DbStore) {
 	}
 	s.Dgraph = dgo.NewDgraphClient(clients...)
 	DB = s
-}
-
-func SerializePage(currentPage *page.Page) (pb []byte, err error) {
-	p := ConvertToJsonPage(currentPage)
-	pb, err = json.Marshal(p)
-	if err != nil {
-		fmt.Print(err)
-	}
-	return
-}
-
-func DeserializePage(pb []byte) (currentPage *page.Page, err error) {
-	jsonMap := make(map[string][]JsonPage)
-	err = json.Unmarshal(pb, &jsonMap)
-	jsonPages := jsonMap["result"]
-	if len(jsonPages) > 0 {
-		currentPage = ConvertToPage(nil, &jsonPages[0])
-	}
-
-	return
-}
-
-func DeserializePredicate(pb []byte) (exists bool, err error) {
-	jsonMap := make(map[string][]JsonPredicate)
-	err = json.Unmarshal(pb, &jsonMap)
-	if err != nil {
-		return
-	}
-	edges := jsonMap["edges"]
-	if len(edges) > 0 {
-		exists = edges[0].Matching > 0
-	} else {
-		exists = false
-	}
-	return
-}
-
-func ConvertToPage(parentPage *page.Page, jsonPage *JsonPage) (currentPage *page.Page) {
-	currentPage = &page.Page{
-		Uid:       jsonPage.Uid,
-		Url:       jsonPage.Url,
-		Timestamp: jsonPage.Timestamp,
-	}
-	if parentPage != nil {
-		currentPage.Parent = parentPage
-	}
-	wg := sync.WaitGroup{}
-	convertPagesChan := make(chan *page.Page)
-	for _, childJsonPage := range jsonPage.Children {
-		wg.Add(1)
-		go func(childJsonPage *JsonPage) {
-			defer wg.Done()
-			childPage := ConvertToPage(currentPage, childJsonPage)
-			convertPagesChan <- childPage
-		}(childJsonPage)
-	}
-	go func() {
-		wg.Wait()
-		close(convertPagesChan)
-
-	}()
-	for childPages := range convertPagesChan {
-		currentPage.Children = append(currentPage.Children, childPages)
-	}
-	return
-}
-
-func ConvertToJsonPage(currentPage *page.Page) (jsonPage JsonPage) {
-	return JsonPage{
-		Url:       currentPage.Url,
-		Timestamp: currentPage.Timestamp,
-	}
 }
 
 func (store *DbStore) SetSchema() (err error) {
@@ -196,6 +124,12 @@ func (store *DbStore) FindNode(ctx *context.Context, txn *dgo.Txn, Url string, d
 		return
 	}
 	currentPage, err = DeserializePage(resp.Json)
+
+	if currentPage != nil {
+		if currentPage.MaxDepth() < depth {
+			return nil, nil
+		}
+	}
 	return
 }
 
@@ -278,4 +212,76 @@ func (store *DbStore) CheckOrCreatePredicate(ctx *context.Context, parentUid str
 		}
 	}
 	return
+}
+
+func SerializePage(currentPage *page.Page) (pb []byte, err error) {
+	p := ConvertToJsonPage(currentPage)
+	pb, err = json.Marshal(p)
+	if err != nil {
+		fmt.Print(err)
+	}
+	return
+}
+
+func DeserializePage(pb []byte) (currentPage *page.Page, err error) {
+	jsonMap := make(map[string][]JsonPage)
+	err = json.Unmarshal(pb, &jsonMap)
+	jsonPages := jsonMap["result"]
+	if len(jsonPages) > 0 {
+		currentPage = ConvertToPage(nil, &jsonPages[0])
+	}
+
+	return
+}
+
+func DeserializePredicate(pb []byte) (exists bool, err error) {
+	jsonMap := make(map[string][]JsonPredicate)
+	err = json.Unmarshal(pb, &jsonMap)
+	if err != nil {
+		return
+	}
+	edges := jsonMap["edges"]
+	if len(edges) > 0 {
+		exists = edges[0].Matching > 0
+	} else {
+		exists = false
+	}
+	return
+}
+
+func ConvertToPage(parentPage *page.Page, jsonPage *JsonPage) (currentPage *page.Page) {
+	currentPage = &page.Page{
+		Uid:       jsonPage.Uid,
+		Url:       jsonPage.Url,
+		Timestamp: jsonPage.Timestamp,
+	}
+	if parentPage != nil {
+		currentPage.Parent = parentPage
+	}
+	wg := sync.WaitGroup{}
+	convertPagesChan := make(chan *page.Page)
+	for _, childJsonPage := range jsonPage.Children {
+		wg.Add(1)
+		go func(childJsonPage *JsonPage) {
+			defer wg.Done()
+			childPage := ConvertToPage(currentPage, childJsonPage)
+			convertPagesChan <- childPage
+		}(childJsonPage)
+	}
+	go func() {
+		wg.Wait()
+		close(convertPagesChan)
+
+	}()
+	for childPages := range convertPagesChan {
+		currentPage.Children = append(currentPage.Children, childPages)
+	}
+	return
+}
+
+func ConvertToJsonPage(currentPage *page.Page) (jsonPage JsonPage) {
+	return JsonPage{
+		Url:       currentPage.Url,
+		Timestamp: currentPage.Timestamp,
+	}
 }

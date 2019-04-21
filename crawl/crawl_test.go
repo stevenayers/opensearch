@@ -25,11 +25,6 @@ type (
 var (
 	CrawlTests = []CrawlTest{
 		{"https://golang.org", 5},
-		//{"https://golang.org", 10},
-		//{"http://example.edu", 1},
-		//{"http://example.edu", 3},
-		//{"https://google.com", 5},
-		//{"https://google.com", 10},
 	}
 
 	PageReturnTests = []string{
@@ -41,7 +36,7 @@ var (
 
 func (s *StoreSuite) SetupSuite() {
 	s.store = database.DbStore{}
-	database.InitStore(&s.store)
+	database.Connect(&s.store)
 	err := database.DB.DeleteAll()
 	if err != nil {
 		s.T().Fatal(err)

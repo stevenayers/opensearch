@@ -34,7 +34,7 @@ var (
 
 func (s *StoreSuite) SetupSuite() {
 	s.store = database.DbStore{}
-	database.InitStore(&s.store)
+	database.Connect(&s.store)
 	err := database.DB.DeleteAll()
 	if err != nil {
 		s.T().Fatal(err)
