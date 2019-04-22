@@ -1,7 +1,7 @@
-package handlers_test
+package server_test
 
 import (
-	"clamber/routes"
+	"clamber/server"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -29,7 +29,7 @@ func TestSearchHandler(t *testing.T) {
 		q.Add("depth", strconv.Itoa(test.Depth))
 		req.URL.RawQuery = q.Encode()
 		response := httptest.NewRecorder()
-		router := routes.NewRouter()
+		router := server.NewRouter()
 		router.ServeHTTP(response, req)
 		assert.Equal(t, 200, response.Code, "NotFound response is expected")
 	}

@@ -14,34 +14,40 @@ import (
 type Crawler struct { // Struct to manage Crawl state in one place.
 	AlreadyCrawled map[string]struct{}
 	sync.Mutex
+	DbWaitGroup sync.WaitGroup
 }
 
 func (crawler *Crawler) Crawl(currentPage *page.Page, depth int) {
-	err := database.DB.Create(currentPage)
-	if err != nil {
-		fmt.Print(currentPage.Url)
-		panic(err)
-	}
+	crawler.DbWaitGroup.Add(1)
+	go func(currentPage *page.Page) {
+		defer crawler.DbWaitGroup.Done()
+		err := database.DB.Create(currentPage)
+		if err != nil {
+			fmt.Print(currentPage.Url)
+			panic(err)
+		}
+	}(currentPage)
+
 	if depth <= 0 {
 		return
 	}
 	if crawler.hasAlreadyCrawled(currentPage.Url) {
 		return
 	}
-	wg := sync.WaitGroup{}
+	pageWaitGroup := sync.WaitGroup{}
 	childPagesChan := make(chan *page.Page)
 	childPages, _ := currentPage.FetchChildPages()
 	for _, childPage := range childPages { // Iterate through links found on currentPage
-		wg.Add(1)
+		pageWaitGroup.Add(1)
 		go func(childPage *page.Page) { // create goroutines for each link found and crawl the child currentPage
-			defer wg.Done()
+			defer pageWaitGroup.Done()
 			//fmt.Printf("---%s\n", childPage.Url)
 			crawler.Crawl(childPage, depth-1)
 			childPagesChan <- childPage
 		}(childPage)
 	}
 	go func() { // Close channel when direct child pages have returned
-		wg.Wait()
+		pageWaitGroup.Wait()
 		close(childPagesChan)
 
 	}()

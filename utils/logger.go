@@ -1,6 +1,7 @@
-package logger
+package utils
 
 import (
+	"github.com/google/uuid"
 	"log"
 	"net/http"
 	"time"
@@ -20,19 +21,20 @@ func newRichResponseWriter(w http.ResponseWriter) *richResponseWriter {
 	return &richResponseWriter{w, http.StatusOK}
 }
 
-func Logger(handler http.Handler, name string) http.Handler {
+func Logger(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
+		requestUid := uuid.New()
+		r.Header.Add("Clamber-Request-ID", requestUid.String())
 		rw := newRichResponseWriter(w)
 		handler.ServeHTTP(rw, r)
 		log.Printf(
-			"%s\t%d\t%s\t%s\t\t%s%s",
-			r.Method,
+			"%s: %s%s (status code: %d method: %s duration: %s)",
+			requestUid.String(),
+			r.URL.Path, "?"+r.URL.RawQuery,
 			rw.statusCode,
-			name,
+			r.Method,
 			time.Since(start),
-			r.URL.Path,
-			"?"+r.URL.RawQuery, // This will add a question mark onto any request, regardless of query params, not good.
 		)
 
 	})

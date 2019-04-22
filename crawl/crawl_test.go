@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"sync"
 	"testing"
 	"time"
 )
@@ -24,7 +25,7 @@ type (
 
 var (
 	CrawlTests = []CrawlTest{
-		{"https://golang.org", 5},
+		{"https://golang.org", 3},
 	}
 
 	PageReturnTests = []string{
@@ -74,7 +75,7 @@ func TestCrawlSuite(t *testing.T) {
 
 func (s *StoreSuite) TestAlreadyCrawled() {
 	for _, test := range CrawlTests {
-		crawler := crawl.Crawler{AlreadyCrawled: make(map[string]struct{})}
+		crawler := crawl.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
 		rootPage := page.Page{Url: test.Url, Timestamp: time.Now().Unix()}
 		crawler.Crawl(&rootPage, test.Depth)
 		for Url := range crawler.AlreadyCrawled { // Iterate through crawled AlreadyCrawled and recursively search for each one
@@ -87,7 +88,7 @@ func (s *StoreSuite) TestAlreadyCrawled() {
 
 func (s *StoreSuite) TestAllPagesReturned() {
 	for _, testUrl := range PageReturnTests {
-		crawler := crawl.Crawler{AlreadyCrawled: make(map[string]struct{})}
+		crawler := crawl.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
 		rootPage := page.Page{Url: testUrl, Timestamp: time.Now().Unix()}
 		Urls, _ := rootPage.FetchChildPages()
 		crawler.Crawl(&rootPage, 1)

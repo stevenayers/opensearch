@@ -1,8 +1,7 @@
-package routes
+package server
 
 import (
-	"clamber/handlers"
-	"clamber/logger"
+	"clamber/utils"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -24,7 +23,7 @@ var DefinedRoutes = Routes{
 		"Initiate",
 		"GET",
 		"/search",
-		handlers.Search,
+		Search,
 		[]string{
 			"url", "{url}",
 			"depth", "{depth}"},
@@ -34,7 +33,7 @@ var DefinedRoutes = Routes{
 func NewRouter() *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	for _, route := range DefinedRoutes {
-		handler := logger.Logger(route.HandlerFunc, route.Name)
+		handler := utils.Logger(route.HandlerFunc)
 		router.
 			Methods(route.Method).
 			Path(route.Pattern).

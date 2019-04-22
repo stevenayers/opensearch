@@ -4,14 +4,14 @@ Fetches page data, converts the HTML into AlreadyCrawled, and formats the URLs
 package page
 
 import (
+	"clamber/utils"
+	"encoding/json"
+	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"log"
 	"net/http"
-	"net/url"
-	"path"
-	"regexp"
-	"sort"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -35,7 +35,7 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 	if !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") { // Check if HTML file
 		return
 	}
-	doc, err := parseHtml(resp)
+	doc, err := utils.ParseHtml(resp)
 	if err != nil {
 		log.Printf("failed to parse HTML: %v", err)
 		return
@@ -44,8 +44,8 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 	// end up spawning 2 goroutines for same result
 	doc.Find("a").Each(func(index int, item *goquery.Selection) {
 		href, ok := item.Attr("href")
-		if ok && IsRelativeUrl(href) && IsRelativeHtml(href) && href != "" {
-			absoluteUrl := ParseRelativeUrl(page.Url, href) // Standardises URL
+		if ok && utils.IsRelativeUrl(href) && utils.IsRelativeHtml(href) && href != "" {
+			absoluteUrl := utils.ParseRelativeUrl(page.Url, href) // Standardises URL
 			_, isPresent := localProcessed[absoluteUrl.Path]
 			if !isPresent {
 				localProcessed[absoluteUrl.Path] = struct{}{}
@@ -67,48 +67,65 @@ func (page *Page) MaxDepth() (countDepth int) {
 		for _, childPage := range page.Children {
 			childDepths = append(childDepths, childPage.MaxDepth())
 		}
-		return MaxIntSlice(childDepths) + 1
+		return utils.MaxIntSlice(childDepths) + 1
 	} else {
 		return 0
 	}
 }
 
-func MaxIntSlice(v []int) int {
-	sort.Ints(v)
-	return v[len(v)-1]
-}
+func ConvertToPage(parentPage *Page, jsonPage *utils.JsonPage) (currentPage *Page) {
+	currentPage = &Page{
+		Uid:       jsonPage.Uid,
+		Url:       jsonPage.Url,
+		Timestamp: jsonPage.Timestamp,
+	}
+	if parentPage != nil {
+		currentPage.Parent = parentPage
+	}
+	wg := sync.WaitGroup{}
+	convertPagesChan := make(chan *Page)
+	for _, childJsonPage := range jsonPage.Children {
+		wg.Add(1)
+		go func(childJsonPage *utils.JsonPage) {
+			defer wg.Done()
+			childPage := ConvertToPage(currentPage, childJsonPage)
+			convertPagesChan <- childPage
+		}(childJsonPage)
+	}
+	go func() {
+		wg.Wait()
+		close(convertPagesChan)
 
-func parseHtml(resp *http.Response) (doc *goquery.Document, err error) {
-
-	doc, err = goquery.NewDocumentFromReader(resp.Body)
+	}()
+	for childPages := range convertPagesChan {
+		currentPage.Children = append(currentPage.Children, childPages)
+	}
 	return
 }
 
-func ParseRelativeUrl(rootUrl string, relativeUrl string) (absoluteUrl *url.URL) {
-	parsedRootUrl, err := url.Parse(rootUrl)
-	if err != nil {
-		return nil
+func ConvertToJsonPage(currentPage *Page) (jsonPage utils.JsonPage) {
+	return utils.JsonPage{
+		Url:       currentPage.Url,
+		Timestamp: currentPage.Timestamp,
 	}
-	absoluteUrl, err = url.Parse(parsedRootUrl.Scheme + "://" + parsedRootUrl.Host + path.Clean("/"+relativeUrl))
+}
+
+func SerializePage(currentPage *Page) (pb []byte, err error) {
+	p := ConvertToJsonPage(currentPage)
+	pb, err = json.Marshal(p)
 	if err != nil {
-		return nil
+		fmt.Print(err)
 	}
-	absoluteUrl.Fragment = "" // Removes '#' identifiers from Url
 	return
 }
 
-func IsRelativeUrl(href string) bool {
-	match, _ := regexp.MatchString("^(?:[a-zA-Z]+:)?//", href)
-	return !match
-}
-
-func IsRelativeHtml(href string) bool {
-	htmlMatch, _ := regexp.MatchString(`(\.html$)`, href) // Doesn't cover all allowed file extensions
-	if htmlMatch {
-		return htmlMatch
-	} else {
-		match, _ := regexp.MatchString(`(\.[a-zA-Z0-9]+$)`, href)
-		return !match
+func DeserializePage(pb []byte) (currentPage *Page, err error) {
+	jsonMap := make(map[string][]utils.JsonPage)
+	err = json.Unmarshal(pb, &jsonMap)
+	jsonPages := jsonMap["result"]
+	if len(jsonPages) > 0 {
+		currentPage = ConvertToPage(nil, &jsonPages[0])
 	}
 
+	return
 }

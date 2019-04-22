@@ -1,10 +1,9 @@
 package database
 
 import (
-	"clamber/conf"
 	"clamber/page"
+	"clamber/utils"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/dgraph-io/dgo"
 	"github.com/dgraph-io/dgo/protos/api"
@@ -12,7 +11,6 @@ import (
 	"log"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 type (
@@ -30,23 +28,12 @@ type (
 		*dgo.Dgraph
 		Connection []*grpc.ClientConn
 	}
-
-	JsonPage struct {
-		Uid       string      `json:"uid,omitempty"`
-		Url       string      `json:"url,omitempty"`
-		Timestamp int64       `json:"timestamp,omitempty"`
-		Children  []*JsonPage `json:"links,omitempty"`
-	}
-
-	JsonPredicate struct {
-		Matching int `json:"matching"`
-	}
 )
 
 var DB Store
 
 func Connect(s *DbStore) {
-	config := conf.GetConfig()
+	config := utils.GetConfig()
 	var clients []api.DgraphClient
 	for _, connConfig := range config.Database.Connections {
 		connString := fmt.Sprintf("%s:%d", connConfig.Host, connConfig.Port)
@@ -123,7 +110,7 @@ func (store *DbStore) FindNode(ctx *context.Context, txn *dgo.Txn, Url string, d
 		fmt.Print(err)
 		return
 	}
-	currentPage, err = DeserializePage(resp.Json)
+	currentPage, err = page.DeserializePage(resp.Json)
 
 	if currentPage != nil {
 		if currentPage.MaxDepth() < depth {
@@ -146,7 +133,7 @@ func (store *DbStore) FindOrCreateNode(ctx *context.Context, currentPage *page.P
 			uid = resultPage.Uid
 		}
 		if uid == "" {
-			p, err = SerializePage(currentPage)
+			p, err = page.SerializePage(currentPage)
 			if err != nil {
 				return
 			}
@@ -182,7 +169,7 @@ func (store *DbStore) CheckPredicate(ctx *context.Context, txn *dgo.Txn, parentU
 	if err != nil {
 		return
 	}
-	exists, err = DeserializePredicate(resp.Json)
+	exists, err = utils.DeserializePredicate(resp.Json)
 	return
 }
 
@@ -212,76 +199,4 @@ func (store *DbStore) CheckOrCreatePredicate(ctx *context.Context, parentUid str
 		}
 	}
 	return
-}
-
-func SerializePage(currentPage *page.Page) (pb []byte, err error) {
-	p := ConvertToJsonPage(currentPage)
-	pb, err = json.Marshal(p)
-	if err != nil {
-		fmt.Print(err)
-	}
-	return
-}
-
-func DeserializePage(pb []byte) (currentPage *page.Page, err error) {
-	jsonMap := make(map[string][]JsonPage)
-	err = json.Unmarshal(pb, &jsonMap)
-	jsonPages := jsonMap["result"]
-	if len(jsonPages) > 0 {
-		currentPage = ConvertToPage(nil, &jsonPages[0])
-	}
-
-	return
-}
-
-func DeserializePredicate(pb []byte) (exists bool, err error) {
-	jsonMap := make(map[string][]JsonPredicate)
-	err = json.Unmarshal(pb, &jsonMap)
-	if err != nil {
-		return
-	}
-	edges := jsonMap["edges"]
-	if len(edges) > 0 {
-		exists = edges[0].Matching > 0
-	} else {
-		exists = false
-	}
-	return
-}
-
-func ConvertToPage(parentPage *page.Page, jsonPage *JsonPage) (currentPage *page.Page) {
-	currentPage = &page.Page{
-		Uid:       jsonPage.Uid,
-		Url:       jsonPage.Url,
-		Timestamp: jsonPage.Timestamp,
-	}
-	if parentPage != nil {
-		currentPage.Parent = parentPage
-	}
-	wg := sync.WaitGroup{}
-	convertPagesChan := make(chan *page.Page)
-	for _, childJsonPage := range jsonPage.Children {
-		wg.Add(1)
-		go func(childJsonPage *JsonPage) {
-			defer wg.Done()
-			childPage := ConvertToPage(currentPage, childJsonPage)
-			convertPagesChan <- childPage
-		}(childJsonPage)
-	}
-	go func() {
-		wg.Wait()
-		close(convertPagesChan)
-
-	}()
-	for childPages := range convertPagesChan {
-		currentPage.Children = append(currentPage.Children, childPages)
-	}
-	return
-}
-
-func ConvertToJsonPage(currentPage *page.Page) (jsonPage JsonPage) {
-	return JsonPage{
-		Url:       currentPage.Url,
-		Timestamp: currentPage.Timestamp,
-	}
 }

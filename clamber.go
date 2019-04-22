@@ -1,17 +1,20 @@
 package main
 
 import (
-	"clamber/conf"
-	"clamber/routes"
+	"clamber/server"
+	"clamber/utils"
 	"fmt"
 	"log"
 	"net/http"
 )
 
 func main() {
-	config := conf.GetConfig()
+	config := utils.GetConfig()
+	if config.General.MaxGoroutines > 0 {
+		utils.InitBuffer(config.General.MaxGoroutines)
+	}
 
-	router := routes.NewRouter()
+	router := server.NewRouter()
 	log.Printf("Listening on port %d...", config.General.Port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", config.General.Port), router)
 	if err != nil {

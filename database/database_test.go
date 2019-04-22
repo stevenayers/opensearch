@@ -76,7 +76,7 @@ func (s *StoreSuite) TestCreateAndCheckPredicate() {
 			Url:       test.Url,
 			Timestamp: time.Now().Unix(),
 		}
-		crawler := crawl.Crawler{AlreadyCrawled: make(map[string]struct{})}
+		crawler := crawl.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
 		crawler.Crawl(&expectedPage, 1)
 		ctx := context.Background()
 		txn := s.store.NewTxn()
@@ -94,7 +94,7 @@ func (s *StoreSuite) TestCreateAndFindNode() {
 			Url:       test.Url,
 			Timestamp: time.Now().Unix(),
 		}
-		crawler := crawl.Crawler{AlreadyCrawled: make(map[string]struct{})}
+		crawler := crawl.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
 		crawler.Crawl(&expectedPage, test.Depth)
 		ctx := context.Background()
 		txn := s.store.NewTxn()

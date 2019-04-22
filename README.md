@@ -10,11 +10,45 @@ Proposed tech stack:
 - [Dgraph](https://dgraph.io)
 
 This is an extension of: https://github.com/stevenayers/golang-webcrawler
+
+
+## Getting Started
+Warning: Expect performance issues when running clamber and dgraph locally, avoid running a depth higher than 3.
+
+
+1. Clone project
+    ```bash
+    git clone git@github.com:stevenayers/clamber.git
+    ```
+1. Install dependencies & build binary (`cd` to project directory)
+    ```bash
+    dep ensure && go build clamber.go
+    ```
+1. Run dgraph (if you don't have an existing instance already).
+    ```bash
+    mkdir -p ~/dgraph
+    
+    # Run dgraphzero
+    docker run -i -p 5080:5080 -p 6080:6080 -p 8080:8080 -p 9080:9080 -p 8008:8008 -v ~/dgraph:/dgraph --name dgraph dgraph/dgraph dgraph zero
+    
+    # In another terminal, now run dgraph
+    docker exec -i dgraph dgraph alpha --lru_mb 4096 --zero localhost:5080
+    
+    # And in another, run ratel (Dgraph UI)
+    docker exec -i dgraph dgraph-ratel -port 8008
+    ```
+1. Run clamber
+    ```bash
+    ./clamber -config ./Config.toml
+    ```
+1. You're good to go. Example query url: [http://localhost:8000/search?url=https://golang.org&depth=3](http://localhost:8000/search?url=https://golang.org&depth=3)
+
 ## Design
 
 ### Roadmap (order of priority)
-- Fix and close all issues
-- Update design documentation & add getting started section.
+- Fix and close all issues [1/3]
+- Update design documentation
+- ~add getting started section.~
 - Improve testing of handlers
 - Check safety of recursive functions
 - Separate out http client into a different package
