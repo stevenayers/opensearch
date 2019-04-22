@@ -9,8 +9,6 @@ Proposed tech stack:
 - ~RDBMS~
 - [Dgraph](https://dgraph.io)
 
-This is an extension of: https://github.com/stevenayers/golang-webcrawler
-
 
 ## Getting Started
 Warning: Expect performance issues when running clamber and dgraph locally, avoid running a depth higher than 3.
@@ -44,14 +42,6 @@ Warning: Expect performance issues when running clamber and dgraph locally, avoi
 1. You're good to go. Example query url: [http://localhost:8000/search?url=https://golang.org&depth=3](http://localhost:8000/search?url=https://golang.org&depth=3)
 
 ## Design
-
-### Roadmap (order of priority)
-- Fix and close all issues [1/3]
-- Update design documentation
-- ~add getting started section.~
-- Improve testing of handlers
-- Check safety of recursive functions
-- Separate out http client into a different package
 
 ### Goals
 - Must be able to crawl internet infinitely, just domain based or on a fixed length
