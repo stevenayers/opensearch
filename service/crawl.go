@@ -1,11 +1,9 @@
 /*
 Controls the crawling through a website's structure, also manages the crawl state.
 */
-package crawl
+package service
 
 import (
-	"clamber/database"
-	"clamber/page"
 	"fmt"
 	"strings"
 	"sync"
@@ -17,11 +15,11 @@ type Crawler struct { // Struct to manage Crawl state in one place.
 	DbWaitGroup sync.WaitGroup
 }
 
-func (crawler *Crawler) Crawl(currentPage *page.Page, depth int) {
+func (crawler *Crawler) Crawl(currentPage *Page, depth int) {
 	crawler.DbWaitGroup.Add(1)
-	go func(currentPage *page.Page) {
+	go func(currentPage *Page) {
 		defer crawler.DbWaitGroup.Done()
-		err := database.DB.Create(currentPage)
+		err := DB.Create(currentPage)
 		if err != nil {
 			fmt.Print(currentPage.Url)
 			panic(err)
@@ -35,11 +33,11 @@ func (crawler *Crawler) Crawl(currentPage *page.Page, depth int) {
 		return
 	}
 	pageWaitGroup := sync.WaitGroup{}
-	childPagesChan := make(chan *page.Page)
+	childPagesChan := make(chan *Page)
 	childPages, _ := currentPage.FetchChildPages()
 	for _, childPage := range childPages { // Iterate through links found on currentPage
 		pageWaitGroup.Add(1)
-		go func(childPage *page.Page) { // create goroutines for each link found and crawl the child currentPage
+		go func(childPage *Page) { // create goroutines for each link found and crawl the child currentPage
 			defer pageWaitGroup.Done()
 			//fmt.Printf("---%s\n", childPage.Url)
 			crawler.Crawl(childPage, depth-1)
@@ -52,7 +50,7 @@ func (crawler *Crawler) Crawl(currentPage *page.Page, depth int) {
 
 	}()
 	for childPages := range childPagesChan { // Feed channel values into slice, possibly performance inefficient.
-		currentPage.Children = append(currentPage.Children, childPages)
+		currentPage.Links = append(currentPage.Links, childPages)
 	}
 }
 

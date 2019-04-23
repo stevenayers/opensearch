@@ -1,9 +1,8 @@
-package page_test
+package service_test
 
 import (
-	"clamber/page"
+	"clamber/service"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 type (
@@ -50,11 +49,11 @@ var ParseUrlTests = []ParseUrlTest{
 	{"test#jg380gj39v", "http://example.edu/test"},
 }
 
-func TestFetchUrlsHttpError(t *testing.T) {
+func (s *StoreSuite) TestFetchUrlsHttpError() {
 	for _, test := range FetchUrlTests {
-		thisPage := page.Page{Url: test.Url}
+		thisPage := service.Page{Url: test.Url}
 		_, err := thisPage.FetchChildPages()
-		assert.Equal(t, test.httpError, err != nil)
+		assert.Equal(s.T(), test.httpError, err != nil)
 	}
 }
 
@@ -63,16 +62,16 @@ func TestFetchUrlsHttpError(t *testing.T) {
 // Another test case is checking correct errors from parseHtml
 // Would also test IsRelativeHtml regexs (very important to test Regex)
 
-func TestIsRelativeUrl(t *testing.T) {
+func (s *StoreSuite) TestIsRelativeUrl() {
 	for _, test := range RelativeUrlTests {
-		assert.Equal(t, test.IsRelative, page.IsRelativeUrl(test.Url))
+		assert.Equal(s.T(), test.IsRelative, service.IsRelativeUrl(test.Url))
 	}
 }
 
-func TestParseRelativeUrl(t *testing.T) {
+func (s *StoreSuite) TestParseRelativeUrl() {
 	rootUrl := "http://example.edu"
 	for _, test := range ParseUrlTests {
-		absoluteUrl := page.ParseRelativeUrl(rootUrl, test.Url)
-		assert.Equal(t, test.ExpectedUrl, absoluteUrl.String())
+		absoluteUrl := service.ParseRelativeUrl(rootUrl, test.Url)
+		assert.Equal(s.T(), test.ExpectedUrl, absoluteUrl.String())
 	}
 }

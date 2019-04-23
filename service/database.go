@@ -1,12 +1,10 @@
-package database
+package service
 
 import (
-	"clamber/conf"
-	"clamber/page"
 	"context"
 	"fmt"
 	"github.com/dgraph-io/dgo"
-	"github.com/dgraph-io/dgo/protos/api"
+	dapi "github.com/dgraph-io/dgo/protos/api"
 	"google.golang.org/grpc"
 	"log"
 	"strconv"
@@ -17,9 +15,9 @@ type (
 	Store interface {
 		SetSchema() (err error)
 		DeleteAll() (err error)
-		Create(currentPage *page.Page) (err error)
-		FindNode(ctx *context.Context, txn *dgo.Txn, url string, depth int) (currentPage *page.Page, err error)
-		FindOrCreateNode(ctx *context.Context, currentPage *page.Page) (uid string, err error)
+		Create(currentPage *Page) (err error)
+		FindNode(ctx *context.Context, txn *dgo.Txn, url string, depth int) (currentPage *Page, err error)
+		FindOrCreateNode(ctx *context.Context, currentPage *Page) (uid string, err error)
 		CheckPredicate(ctx *context.Context, txn *dgo.Txn, parentUid string, childUid string) (exists bool, err error)
 		CheckOrCreatePredicate(ctx *context.Context, parentUid string, childUid string) (err error)
 	}
@@ -33,22 +31,22 @@ type (
 var DB Store
 
 func Connect(s *DbStore) {
-	config := conf.GetConfig()
-	var clients []api.DgraphClient
+	config := GetConfig()
+	var clients []dapi.DgraphClient
 	for _, connConfig := range config.Database.Connections {
 		connString := fmt.Sprintf("%s:%d", connConfig.Host, connConfig.Port)
 		conn, err := grpc.Dial(connString, grpc.WithInsecure())
 		if err != nil {
 			fmt.Print(err)
 		}
-		clients = append(clients, api.NewDgraphClient(conn))
+		clients = append(clients, dapi.NewDgraphClient(conn))
 	}
 	s.Dgraph = dgo.NewDgraphClient(clients...)
 	DB = s
 }
 
 func (store *DbStore) SetSchema() (err error) {
-	op := &api.Operation{}
+	op := &dapi.Operation{}
 	op.Schema = `
 	url: string @index(exact) @upsert .
 	timestamp: int .
@@ -63,11 +61,11 @@ func (store *DbStore) SetSchema() (err error) {
 }
 
 func (store *DbStore) DeleteAll() (err error) {
-	err = store.Alter(context.Background(), &api.Operation{DropAll: true})
+	err = store.Alter(context.Background(), &dapi.Operation{DropAll: true})
 	return
 }
 
-func (store *DbStore) Create(currentPage *page.Page) (err error) {
+func (store *DbStore) Create(currentPage *Page) (err error) {
 	var currentUid string
 	ctx := context.Background()
 	currentUid, err = store.FindOrCreateNode(&ctx, currentPage)
@@ -75,11 +73,11 @@ func (store *DbStore) Create(currentPage *page.Page) (err error) {
 		log.Printf("[ERROR] context: create current page (%s) - message: %s\n", currentPage.Url, err.Error())
 		return
 	}
-	if len(currentPage.Parent) > 0 {
+	if currentPage.Parent != nil {
 		var parentUid string
-		parentUid, err = store.FindOrCreateNode(&ctx, currentPage.Parent[0])
+		parentUid, err = store.FindOrCreateNode(&ctx, currentPage.Parent)
 		if err != nil {
-			log.Printf("[ERROR] context: create parent page (%s) - message: %s\n", currentPage.Parent[0].Url, err.Error())
+			log.Printf("[ERROR] context: create parent page (%s) - message: %s\n", currentPage.Parent.Url, err.Error())
 			return
 		}
 		err = store.CheckOrCreatePredicate(&ctx, parentUid, currentUid)
@@ -94,7 +92,7 @@ func (store *DbStore) Create(currentPage *page.Page) (err error) {
 	return
 }
 
-func (store *DbStore) FindNode(ctx *context.Context, txn *dgo.Txn, Url string, depth int) (currentPage *page.Page, err error) {
+func (store *DbStore) FindNode(ctx *context.Context, txn *dgo.Txn, Url string, depth int) (currentPage *Page, err error) {
 	queryDepth := strconv.Itoa(depth + 1)
 	variables := map[string]string{"$url": Url}
 	q := `query withvar($url: string, $depth: int){
@@ -110,7 +108,7 @@ func (store *DbStore) FindNode(ctx *context.Context, txn *dgo.Txn, Url string, d
 		fmt.Print(err)
 		return
 	}
-	currentPage, err = page.DeserializePage(resp.Json)
+	currentPage, err = deserializePage(resp.Json)
 
 	if currentPage != nil {
 		if currentPage.MaxDepth() < depth {
@@ -120,11 +118,11 @@ func (store *DbStore) FindNode(ctx *context.Context, txn *dgo.Txn, Url string, d
 	return
 }
 
-func (store *DbStore) FindOrCreateNode(ctx *context.Context, currentPage *page.Page) (uid string, err error) {
+func (store *DbStore) FindOrCreateNode(ctx *context.Context, currentPage *Page) (uid string, err error) {
 	for uid == "" {
-		var assigned *api.Assigned
+		var assigned *dapi.Assigned
 		var p []byte
-		var resultPage *page.Page
+		var resultPage *Page
 		txn := store.NewTxn()
 		resultPage, err = store.FindNode(ctx, txn, currentPage.Url, 0)
 		if err != nil {
@@ -133,11 +131,11 @@ func (store *DbStore) FindOrCreateNode(ctx *context.Context, currentPage *page.P
 			uid = resultPage.Uid
 		}
 		if uid == "" {
-			p, err = page.SerializePage(currentPage)
+			p, err = serializePage(currentPage)
 			if err != nil {
 				return
 			}
-			mu := &api.Mutation{}
+			mu := &dapi.Mutation{}
 			mu.SetJson = p
 			assigned, err = txn.Mutate(*ctx, mu)
 			if err != nil {
@@ -164,12 +162,12 @@ func (store *DbStore) CheckPredicate(ctx *context.Context, txn *dgo.Txn, parentU
 				matching: count(links) @filter(uid($childUid))
 			  }
 			}`
-	var resp *api.Response
+	var resp *dapi.Response
 	resp, err = txn.QueryWithVars(*ctx, q, variables)
 	if err != nil {
 		return
 	}
-	exists, err = page.DeserializePredicate(resp.Json)
+	exists, err = deserializePredicate(resp.Json)
 	return
 }
 
@@ -184,8 +182,8 @@ func (store *DbStore) CheckOrCreatePredicate(ctx *context.Context, parentUid str
 			return
 		}
 		if !exists {
-			_, err = txn.Mutate(*ctx, &api.Mutation{
-				Set: []*api.NQuad{{
+			_, err = txn.Mutate(*ctx, &dapi.Mutation{
+				Set: []*dapi.NQuad{{
 					Subject:   parentUid,
 					Predicate: "links",
 					ObjectId:  childUid,

@@ -1,7 +1,7 @@
 /*
  Package page fetches page data, converts the HTML into AlreadyCrawled, and formats the URLs
 */
-package page
+package service
 
 import (
 	"encoding/json"
@@ -22,8 +22,8 @@ type (
 	Page struct {
 		Uid       string  `json:"uid,omitempty"`
 		Url       string  `json:"url,omitempty"`
-		Children  []*Page `json:"links,omitempty"`
-		Parent    []*Page `json:"parents,omitempty"`
+		Links     []*Page `json:"links,omitempty"`
+		Parent    *Page   `json:"-"`
 		Timestamp int64   `json:"timestamp,omitempty"`
 	}
 
@@ -49,7 +49,7 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 	if !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") { // Check if HTML file
 		return
 	}
-	doc, err := ParseHtml(resp)
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
 		log.Printf("failed to parse HTML: %v", err)
 		return
@@ -65,7 +65,7 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 				localProcessed[absoluteUrl.Path] = struct{}{}
 				childPage := Page{
 					Url:       strings.TrimRight(absoluteUrl.String(), "/"),
-					Parent:    []*Page{page},
+					Parent:    page,
 					Timestamp: time.Now().Unix(),
 				}
 				childPages = append(childPages, &childPage)
@@ -76,74 +76,13 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 }
 
 func (page *Page) MaxDepth() (countDepth int) {
-	if page.Children != nil {
+	if page.Links != nil {
 		var childDepths []int
-		for _, childPage := range page.Children {
+		for _, childPage := range page.Links {
 			childDepths = append(childDepths, childPage.MaxDepth())
 		}
 		countDepth = maxIntSlice(childDepths) + 1
 	}
-	return
-}
-
-func ConvertToPage(parentPage *Page, jsonPage *JsonPage) (currentPage *Page) {
-	currentPage = &Page{
-		Uid:       jsonPage.Uid,
-		Url:       jsonPage.Url,
-		Timestamp: jsonPage.Timestamp,
-	}
-	if parentPage != nil {
-		currentPage.Parent = []*Page{parentPage}
-	}
-	wg := sync.WaitGroup{}
-	convertPagesChan := make(chan *Page)
-	for _, childJsonPage := range jsonPage.Children {
-		wg.Add(1)
-		go func(childJsonPage *JsonPage) {
-			defer wg.Done()
-			childPage := ConvertToPage(currentPage, childJsonPage)
-			convertPagesChan <- childPage
-		}(childJsonPage)
-	}
-	go func() {
-		wg.Wait()
-		close(convertPagesChan)
-
-	}()
-	for childPages := range convertPagesChan {
-		currentPage.Children = append(currentPage.Children, childPages)
-	}
-	return
-}
-
-func ConvertToJsonPage(currentPage *Page) (jsonPage JsonPage) {
-	return JsonPage{
-		Url:       currentPage.Url,
-		Timestamp: currentPage.Timestamp,
-	}
-}
-
-func SerializePage(currentPage *Page) (pb []byte, err error) {
-	p := ConvertToJsonPage(currentPage)
-	pb, err = json.Marshal(p)
-	if err != nil {
-		fmt.Print(err)
-	}
-	return
-}
-
-func DeserializePage(pb []byte) (currentPage *Page, err error) {
-	jsonMap := make(map[string][]JsonPage)
-	err = json.Unmarshal(pb, &jsonMap)
-	jsonPages := jsonMap["result"]
-	if len(jsonPages) > 0 {
-		currentPage = ConvertToPage(nil, &jsonPages[0])
-	}
-	return
-}
-
-func ParseHtml(resp *http.Response) (doc *goquery.Document, err error) {
-	doc, err = goquery.NewDocumentFromReader(resp.Body)
 	return
 }
 
@@ -176,7 +115,63 @@ func IsRelativeHtml(href string) bool {
 
 }
 
-func DeserializePredicate(pb []byte) (exists bool, err error) {
+func convertToPage(parentPage *Page, jsonPage *JsonPage) (currentPage *Page) {
+	currentPage = &Page{
+		Uid:       jsonPage.Uid,
+		Url:       jsonPage.Url,
+		Timestamp: jsonPage.Timestamp,
+	}
+	if parentPage != nil {
+		currentPage.Parent = parentPage
+	}
+	wg := sync.WaitGroup{}
+	convertPagesChan := make(chan *Page)
+	for _, childJsonPage := range jsonPage.Children {
+		wg.Add(1)
+		go func(childJsonPage *JsonPage) {
+			defer wg.Done()
+			childPage := convertToPage(currentPage, childJsonPage)
+			convertPagesChan <- childPage
+		}(childJsonPage)
+	}
+	go func() {
+		wg.Wait()
+		close(convertPagesChan)
+
+	}()
+	for childPages := range convertPagesChan {
+		currentPage.Links = append(currentPage.Links, childPages)
+	}
+	return
+}
+
+func convertToJsonPage(currentPage *Page) (jsonPage JsonPage) {
+	return JsonPage{
+		Url:       currentPage.Url,
+		Timestamp: currentPage.Timestamp,
+	}
+}
+
+func serializePage(currentPage *Page) (pb []byte, err error) {
+	p := convertToJsonPage(currentPage)
+	pb, err = json.Marshal(p)
+	if err != nil {
+		fmt.Print(err)
+	}
+	return
+}
+
+func deserializePage(pb []byte) (currentPage *Page, err error) {
+	jsonMap := make(map[string][]JsonPage)
+	err = json.Unmarshal(pb, &jsonMap)
+	jsonPages := jsonMap["result"]
+	if len(jsonPages) > 0 {
+		currentPage = convertToPage(nil, &jsonPages[0])
+	}
+	return
+}
+
+func deserializePredicate(pb []byte) (exists bool, err error) {
 	jsonMap := make(map[string][]JsonPredicate)
 	err = json.Unmarshal(pb, &jsonMap)
 	if err != nil {

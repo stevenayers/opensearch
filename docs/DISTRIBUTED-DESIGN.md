@@ -23,7 +23,7 @@ This is an extension of: https://github.com/stevenayers/golang-webcrawler
 - All inter-service communication will be encrypted and will use gRPC
 
 ### Workflow
-![app-workflow](docs/imgs/go-clamber.png)
+![app-workflow](imgs/go-clamber.png)
 
 
 ## Components

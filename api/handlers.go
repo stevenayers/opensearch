@@ -1,9 +1,7 @@
 package api
 
 import (
-	"clamber/crawl"
-	"clamber/database"
-	"clamber/page"
+	"clamber/service"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -18,9 +16,9 @@ import (
 
 type (
 	Query struct {
-		Url     string     `json:"url"`
-		Depth   int        `json:"depth"`
-		Results *page.Page `json:"results"`
+		Url     string        `json:"url"`
+		Depth   int           `json:"depth"`
+		Results *service.Page `json:"results"`
 	}
 )
 
@@ -39,15 +37,15 @@ func Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	query := Query{Url: vars["url"], Depth: depth}
-	store := database.DbStore{}
-	database.Connect(&store)
+	store := service.DbStore{}
+	service.Connect(&store)
 	ctx := context.Background()
 	txn := store.NewTxn()
-	result, err := database.DB.FindNode(&ctx, txn, query.Url, query.Depth)
+	result, err := service.DB.FindNode(&ctx, txn, query.Url, query.Depth)
 	if err != nil {
 		fmt.Print(err)
 	}
-	var crawler crawl.Crawler
+	var crawler service.Crawler
 	if result == nil {
 		start := time.Now()
 		log.Printf("%s: initiating search (url: %s depth: %d)",
@@ -55,8 +53,8 @@ func Search(w http.ResponseWriter, r *http.Request) {
 			query.Url,
 			query.Depth,
 		)
-		crawler = crawl.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
-		result = &page.Page{Url: query.Url}
+		crawler = service.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
+		result = &service.Page{Url: query.Url}
 		crawler.Crawl(result, query.Depth)
 		go func() {
 			crawler.DbWaitGroup.Wait()
