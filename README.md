@@ -1,4 +1,8 @@
 # clamber
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/stevenayers/clamber)](https://goreportcard.com/report/github.com/stevenayers/clamber)
+[![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/stevenayers/clamber)
+
 A distributed system designed to crawl the internet.
 
 Proposed tech stack:
@@ -19,7 +23,8 @@ Warning: Expect performance issues when running clamber and dgraph locally, avoi
     ```
 1. Install dependencies & build binary (`cd` to project directory)
     ```bash
-    dep ensure && go build clamber.go
+    dep ensure
+    go build clamber.go
     ```
 1. Run dgraph (if you don't have an existing instance already).
     ```bash
@@ -48,11 +53,18 @@ Warning: Expect performance issues when running clamber and dgraph locally, avoi
 - TDD will be used for development
 - Must be able to cater to pages changing and updating the sitemap accordingly.
 
-## Components
+## Endpoints
 
-### Map API
-1. Takes a URL, depth, allow_external_links, checks Page Database to see if we already have the info. If we do, query and return it.
-2. If not, initiate recursive crawl.
+### Search
+Takes a URL, depth, allow_external_links, checks Page Database to see if we already have the info. If we do, query and return it. If not, initiate recursive crawl.
+
+| Parameter            | Type   | Description |
+|----------------------|--------|-------------|
+| url                  | string | starting url for sitemap |
+| depth                | int    | 0 is infinite. If you specified 10, that would be your max depth to crawl. |
+| display_depth        | int    | how deep a depth to return in JSON (Not yet implemented) |
+| allow_external_links | bool   | whether to crawl external links or not (Not yet implemented) |
+
 
 `/search` will take the following query parameters:
 ```json
@@ -63,7 +75,7 @@ Warning: Expect performance issues when running clamber and dgraph locally, avoi
     "allow_external_links": false
 }
 ```
-API will return
+Sample result:
 ```json
 {
     "query": {
@@ -106,35 +118,8 @@ API will return
     ]
 }
 ```
-This will specify the starting URL. Maybe it would be a good idea to put a depth limit on this and option to search just the domain or all links. The sitemap service will use the map_id to identify which map to render. This would allow us to generate maps for the entire web, or just for singular sites.
-
-depth (int) - 0 is infinite. If you specified 10, that would be your max depth to crawl. This would decrement on every crawl, and the child links of a page would be reposted back to the queue with the new decremented crawl depth.
-allow_external_links (boolean) - Enables clamber to crawl outside of the website's domain.
-
-
-#### Workflow
-1. Check if URL exists
-3. If url exists and data is not empty, stop process, if doesn't exist or timestamp is more than n seconds ago, continue.
-4. Query page
-5. Parse page
-6. Update URL record with page field to database
-7. Spawn new goroutine for child links
 
 
 
-## Data Model
 
-### Mutations
-* Create single node with no predicates to existing nodes.
-* Create singular node with a predicate to the parent node in that crawl sequence.
-* Create predicate between two existing nodes
-* Mutations will always be made with predicates facing upstream (eg. childPage -> parentPage)
 
-### Queries
-* Retrieve node by URL
-* Retrieve node by Uid
-* Recursive retrieval (reverse predicate calls)
-
-### Questions
-* What happens if the creation of a node fails?
-* How do you manage predicates to a failed parent node?
