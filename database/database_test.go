@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
+	"sync"
 	"testing"
 	"time"
 )
@@ -78,6 +79,7 @@ func (s *StoreSuite) TestCreateAndCheckPredicate() {
 		}
 		crawler := crawl.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
 		crawler.Crawl(&expectedPage, 1)
+		crawler.DbWaitGroup.Wait()
 		ctx := context.Background()
 		txn := s.store.NewTxn()
 		exists, err := s.store.CheckPredicate(&ctx, txn, expectedPage.Uid, expectedPage.Children[0].Uid)
@@ -96,6 +98,7 @@ func (s *StoreSuite) TestCreateAndFindNode() {
 		}
 		crawler := crawl.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
 		crawler.Crawl(&expectedPage, test.Depth)
+		crawler.DbWaitGroup.Wait()
 		ctx := context.Background()
 		txn := s.store.NewTxn()
 		resultPage, err := s.store.FindNode(&ctx, txn, test.Url, test.Depth)

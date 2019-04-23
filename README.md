@@ -6,7 +6,6 @@ Proposed tech stack:
 - Golang
 - HTTP/REST
 - JSON
-- ~RDBMS~
 - [Dgraph](https://dgraph.io)
 
 
@@ -39,7 +38,8 @@ Warning: Expect performance issues when running clamber and dgraph locally, avoi
     ```bash
     ./clamber -config ./Config.toml
     ```
-1. You're good to go. Example query url: [http://localhost:8000/search?url=https://golang.org&depth=3](http://localhost:8000/search?url=https://golang.org&depth=3)
+1. You're good to go.
+    Example query url: [http://localhost:8000/search?url=https://golang.org&depth=3](http://localhost:8000/search?url=https://golang.org&depth=3)
 
 ## Design
 
@@ -47,10 +47,6 @@ Warning: Expect performance issues when running clamber and dgraph locally, avoi
 - Must be able to crawl internet infinitely, just domain based or on a fixed length
 - TDD will be used for development
 - Must be able to cater to pages changing and updating the sitemap accordingly.
-
-### Workflow (out of date)
-![app-workflow](docs/imgs/go-clamber-simple.png)
-
 
 ## Components
 

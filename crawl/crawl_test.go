@@ -25,7 +25,7 @@ type (
 
 var (
 	CrawlTests = []CrawlTest{
-		{"https://golang.org", 3},
+		{"https://golang.org", 2},
 	}
 
 	PageReturnTests = []string{
@@ -78,6 +78,7 @@ func (s *StoreSuite) TestAlreadyCrawled() {
 		crawler := crawl.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
 		rootPage := page.Page{Url: test.Url, Timestamp: time.Now().Unix()}
 		crawler.Crawl(&rootPage, test.Depth)
+		crawler.DbWaitGroup.Wait()
 		for Url := range crawler.AlreadyCrawled { // Iterate through crawled AlreadyCrawled and recursively search for each one
 			var countedDepths []int
 			crawledCounter := 0
@@ -92,6 +93,7 @@ func (s *StoreSuite) TestAllPagesReturned() {
 		rootPage := page.Page{Url: testUrl, Timestamp: time.Now().Unix()}
 		Urls, _ := rootPage.FetchChildPages()
 		crawler.Crawl(&rootPage, 1)
+		crawler.DbWaitGroup.Wait()
 		assert.Equal(s.T(), len(Urls), len(rootPage.Children), "page.Children and fetch Urls length expected to match.")
 	}
 }

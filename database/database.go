@@ -1,8 +1,8 @@
 package database
 
 import (
+	"clamber/conf"
 	"clamber/page"
-	"clamber/utils"
 	"context"
 	"fmt"
 	"github.com/dgraph-io/dgo"
@@ -33,7 +33,7 @@ type (
 var DB Store
 
 func Connect(s *DbStore) {
-	config := utils.GetConfig()
+	config := conf.GetConfig()
 	var clients []api.DgraphClient
 	for _, connConfig := range config.Database.Connections {
 		connString := fmt.Sprintf("%s:%d", connConfig.Host, connConfig.Port)
@@ -169,7 +169,7 @@ func (store *DbStore) CheckPredicate(ctx *context.Context, txn *dgo.Txn, parentU
 	if err != nil {
 		return
 	}
-	exists, err = utils.DeserializePredicate(resp.Json)
+	exists, err = page.DeserializePredicate(resp.Json)
 	return
 }
 

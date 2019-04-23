@@ -1,7 +1,6 @@
-package server
+package api
 
 import (
-	"clamber/utils"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -33,7 +32,7 @@ var DefinedRoutes = Routes{
 func NewRouter() *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	for _, route := range DefinedRoutes {
-		handler := utils.Logger(route.HandlerFunc)
+		handler := Logger(route.HandlerFunc)
 		router.
 			Methods(route.Method).
 			Path(route.Pattern).

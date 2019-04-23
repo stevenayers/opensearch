@@ -4,12 +4,15 @@ Fetches page data, converts the HTML into AlreadyCrawled, and formats the URLs
 package page
 
 import (
-	"clamber/utils"
 	"encoding/json"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"log"
 	"net/http"
+	"net/url"
+	"path"
+	"regexp"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -23,6 +26,17 @@ type (
 		Parent    *Page   `json:"-"`
 		Timestamp int64   `json:"timestamp,omitempty"`
 	}
+
+	JsonPage struct {
+		Uid       string      `json:"uid,omitempty"`
+		Url       string      `json:"url,omitempty"`
+		Timestamp int64       `json:"timestamp,omitempty"`
+		Children  []*JsonPage `json:"links,omitempty"`
+	}
+
+	JsonPredicate struct {
+		Matching int `json:"matching"`
+	}
 )
 
 func (page *Page) FetchChildPages() (childPages []*Page, err error) {
@@ -35,7 +49,7 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 	if !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") { // Check if HTML file
 		return
 	}
-	doc, err := utils.ParseHtml(resp)
+	doc, err := ParseHtml(resp)
 	if err != nil {
 		log.Printf("failed to parse HTML: %v", err)
 		return
@@ -44,8 +58,8 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 	// end up spawning 2 goroutines for same result
 	doc.Find("a").Each(func(index int, item *goquery.Selection) {
 		href, ok := item.Attr("href")
-		if ok && utils.IsRelativeUrl(href) && utils.IsRelativeHtml(href) && href != "" {
-			absoluteUrl := utils.ParseRelativeUrl(page.Url, href) // Standardises URL
+		if ok && IsRelativeUrl(href) && IsRelativeHtml(href) && href != "" {
+			absoluteUrl := ParseRelativeUrl(page.Url, href) // Standardises URL
 			_, isPresent := localProcessed[absoluteUrl.Path]
 			if !isPresent {
 				localProcessed[absoluteUrl.Path] = struct{}{}
@@ -67,13 +81,13 @@ func (page *Page) MaxDepth() (countDepth int) {
 		for _, childPage := range page.Children {
 			childDepths = append(childDepths, childPage.MaxDepth())
 		}
-		return utils.MaxIntSlice(childDepths) + 1
+		return maxIntSlice(childDepths) + 1
 	} else {
 		return 0
 	}
 }
 
-func ConvertToPage(parentPage *Page, jsonPage *utils.JsonPage) (currentPage *Page) {
+func ConvertToPage(parentPage *Page, jsonPage *JsonPage) (currentPage *Page) {
 	currentPage = &Page{
 		Uid:       jsonPage.Uid,
 		Url:       jsonPage.Url,
@@ -86,7 +100,7 @@ func ConvertToPage(parentPage *Page, jsonPage *utils.JsonPage) (currentPage *Pag
 	convertPagesChan := make(chan *Page)
 	for _, childJsonPage := range jsonPage.Children {
 		wg.Add(1)
-		go func(childJsonPage *utils.JsonPage) {
+		go func(childJsonPage *JsonPage) {
 			defer wg.Done()
 			childPage := ConvertToPage(currentPage, childJsonPage)
 			convertPagesChan <- childPage
@@ -103,8 +117,8 @@ func ConvertToPage(parentPage *Page, jsonPage *utils.JsonPage) (currentPage *Pag
 	return
 }
 
-func ConvertToJsonPage(currentPage *Page) (jsonPage utils.JsonPage) {
-	return utils.JsonPage{
+func ConvertToJsonPage(currentPage *Page) (jsonPage JsonPage) {
+	return JsonPage{
 		Url:       currentPage.Url,
 		Timestamp: currentPage.Timestamp,
 	}
@@ -120,12 +134,65 @@ func SerializePage(currentPage *Page) (pb []byte, err error) {
 }
 
 func DeserializePage(pb []byte) (currentPage *Page, err error) {
-	jsonMap := make(map[string][]utils.JsonPage)
+	jsonMap := make(map[string][]JsonPage)
 	err = json.Unmarshal(pb, &jsonMap)
 	jsonPages := jsonMap["result"]
 	if len(jsonPages) > 0 {
 		currentPage = ConvertToPage(nil, &jsonPages[0])
 	}
-
 	return
+}
+
+func ParseHtml(resp *http.Response) (doc *goquery.Document, err error) {
+	doc, err = goquery.NewDocumentFromReader(resp.Body)
+	return
+}
+
+func ParseRelativeUrl(rootUrl string, relativeUrl string) (absoluteUrl *url.URL) {
+	parsedRootUrl, err := url.Parse(rootUrl)
+	if err != nil {
+		return nil
+	}
+	absoluteUrl, err = url.Parse(parsedRootUrl.Scheme + "://" + parsedRootUrl.Host + path.Clean("/"+relativeUrl))
+	if err != nil {
+		return nil
+	}
+	absoluteUrl.Fragment = "" // Removes '#' identifiers from Url
+	return
+}
+
+func IsRelativeUrl(href string) bool {
+	match, _ := regexp.MatchString("^(?:[a-zA-Z]+:)?//", href)
+	return !match
+}
+
+func IsRelativeHtml(href string) bool {
+	htmlMatch, _ := regexp.MatchString(`(\.html$)`, href) // Doesn't cover all allowed file extensions
+	if htmlMatch {
+		return htmlMatch
+	} else {
+		match, _ := regexp.MatchString(`(\.[a-zA-Z0-9]+$)`, href)
+		return !match
+	}
+
+}
+
+func DeserializePredicate(pb []byte) (exists bool, err error) {
+	jsonMap := make(map[string][]JsonPredicate)
+	err = json.Unmarshal(pb, &jsonMap)
+	if err != nil {
+		return
+	}
+	edges := jsonMap["edges"]
+	if len(edges) > 0 {
+		exists = edges[0].Matching > 0
+	} else {
+		exists = false
+	}
+	return
+}
+
+func maxIntSlice(v []int) int {
+	sort.Ints(v)
+	return v[len(v)-1]
 }
