@@ -2,6 +2,7 @@ package main
 
 import (
 	"clamber/api"
+	"clamber/logging"
 	"clamber/service"
 	"fmt"
 	"log"
@@ -10,8 +11,13 @@ import (
 
 func main() {
 	config := service.GetConfig()
+	logging.InitJsonLogger(config.General.LogLevel)
 	router := api.NewRouter()
-	log.Printf("Listening on port %d...", config.General.Port)
+	logging.LogInfo(
+		"port", config.General.Port,
+		"msg", "clamber api started listening",
+		"config", *service.ConfigFile,
+	)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", config.General.Port), router)
 	if err != nil {
 		log.Fatal(err)

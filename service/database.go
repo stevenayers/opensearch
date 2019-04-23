@@ -1,12 +1,13 @@
 package service
 
 import (
+	"clamber/logging"
 	"context"
 	"fmt"
 	"github.com/dgraph-io/dgo"
 	dapi "github.com/dgraph-io/dgo/protos/api"
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
-	"log"
 	"strconv"
 	"strings"
 )
@@ -66,23 +67,40 @@ func (store *DbStore) DeleteAll() (err error) {
 }
 
 func (store *DbStore) Create(currentPage *Page) (err error) {
+	uid := uuid.New().String()
 	var currentUid string
 	ctx := context.Background()
 	currentUid, err = store.FindOrCreateNode(&ctx, currentPage)
 	if err != nil {
-		log.Printf("[ERROR] context: create current page (%s) - message: %s\n", currentPage.Url, err.Error())
+		logging.LogError(
+			"msg", err.Error(),
+			"context", "create current page",
+			"url", currentPage.Url,
+			"uid", uid,
+		)
 		return
 	}
 	if currentPage.Parent != nil {
 		var parentUid string
 		parentUid, err = store.FindOrCreateNode(&ctx, currentPage.Parent)
 		if err != nil {
-			log.Printf("[ERROR] context: create parent page (%s) - message: %s\n", currentPage.Parent.Url, err.Error())
+			logging.LogError(
+				"msg", err.Error(),
+				"context", "create parent page",
+				"url", currentPage.Parent.Url,
+				"uid", uid,
+			)
 			return
 		}
 		err = store.CheckOrCreatePredicate(&ctx, parentUid, currentUid)
 		if err != nil {
-			log.Printf("[ERROR] create predicate (%s -> %s) - message: %s\n", parentUid, currentUid, err.Error())
+			logging.LogError(
+				"context", "create predicate",
+				"msg", err.Error(),
+				"parentUid", parentUid,
+				"childUid", currentUid,
+				"uid", uid,
+			)
 			if !strings.Contains(err.Error(), "Transaction has been aborted. Please retry.") &&
 				!strings.Contains(err.Error(), "Transaction is too old") {
 				return

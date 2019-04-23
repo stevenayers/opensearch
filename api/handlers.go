@@ -1,6 +1,7 @@
 package api
 
 import (
+	"clamber/logging"
 	"clamber/service"
 	"context"
 	"encoding/json"
@@ -48,19 +49,23 @@ func Search(w http.ResponseWriter, r *http.Request) {
 	var crawler service.Crawler
 	if result == nil {
 		start := time.Now()
-		log.Printf("%s: initiating search (url: %s depth: %d)",
-			r.Header.Get("Clamber-Request-ID"),
-			query.Url,
-			query.Depth,
+		logging.LogDebug(
+			"uid", r.Header.Get("Clamber-Request-ID"),
+			"url", query.Url,
+			"depth", query.Depth,
+			"msg", "initiating search",
 		)
 		crawler = service.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
 		result = &service.Page{Url: query.Url}
 		crawler.Crawl(result, query.Depth)
 		go func() {
 			crawler.DbWaitGroup.Wait()
-			log.Printf("%s: finished writing result to dgraph (duration: %s)",
-				r.Header.Get("Clamber-Request-ID"),
-				time.Since(start),
+			logging.LogDebug(
+				"uid", r.Header.Get("Clamber-Request-ID"),
+				"url", query.Url,
+				"depth", query.Depth,
+				"duration", time.Since(start),
+				"msg", "finished writing result to dgraph",
 			)
 		}()
 	}

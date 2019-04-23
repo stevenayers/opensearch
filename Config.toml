@@ -11,3 +11,4 @@
 [general]
   max_goroutines = 0
   port = 8000
+  log_level = "info"
