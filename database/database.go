@@ -75,11 +75,11 @@ func (store *DbStore) Create(currentPage *page.Page) (err error) {
 		log.Printf("[ERROR] context: create current page (%s) - message: %s\n", currentPage.Url, err.Error())
 		return
 	}
-	if currentPage.Parent != nil {
+	if len(currentPage.Parent) > 0 {
 		var parentUid string
-		parentUid, err = store.FindOrCreateNode(&ctx, currentPage.Parent)
+		parentUid, err = store.FindOrCreateNode(&ctx, currentPage.Parent[0])
 		if err != nil {
-			log.Printf("[ERROR] context: create parent page (%s) - message: %s\n", currentPage.Parent.Url, err.Error())
+			log.Printf("[ERROR] context: create parent page (%s) - message: %s\n", currentPage.Parent[0].Url, err.Error())
 			return
 		}
 		err = store.CheckOrCreatePredicate(&ctx, parentUid, currentUid)

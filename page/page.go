@@ -1,5 +1,5 @@
 /*
-Fetches page data, converts the HTML into AlreadyCrawled, and formats the URLs
+ Package page fetches page data, converts the HTML into AlreadyCrawled, and formats the URLs
 */
 package page
 
@@ -23,7 +23,7 @@ type (
 		Uid       string  `json:"uid,omitempty"`
 		Url       string  `json:"url,omitempty"`
 		Children  []*Page `json:"links,omitempty"`
-		Parent    *Page   `json:"-"`
+		Parent    []*Page `json:"parents,omitempty"`
 		Timestamp int64   `json:"timestamp,omitempty"`
 	}
 
@@ -65,7 +65,7 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 				localProcessed[absoluteUrl.Path] = struct{}{}
 				childPage := Page{
 					Url:       strings.TrimRight(absoluteUrl.String(), "/"),
-					Parent:    page,
+					Parent:    []*Page{page},
 					Timestamp: time.Now().Unix(),
 				}
 				childPages = append(childPages, &childPage)
@@ -81,10 +81,9 @@ func (page *Page) MaxDepth() (countDepth int) {
 		for _, childPage := range page.Children {
 			childDepths = append(childDepths, childPage.MaxDepth())
 		}
-		return maxIntSlice(childDepths) + 1
-	} else {
-		return 0
+		countDepth = maxIntSlice(childDepths) + 1
 	}
+	return
 }
 
 func ConvertToPage(parentPage *Page, jsonPage *JsonPage) (currentPage *Page) {
@@ -94,7 +93,7 @@ func ConvertToPage(parentPage *Page, jsonPage *JsonPage) (currentPage *Page) {
 		Timestamp: jsonPage.Timestamp,
 	}
 	if parentPage != nil {
-		currentPage.Parent = parentPage
+		currentPage.Parent = []*Page{parentPage}
 	}
 	wg := sync.WaitGroup{}
 	convertPagesChan := make(chan *Page)
