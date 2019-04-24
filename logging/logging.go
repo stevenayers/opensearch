@@ -30,6 +30,7 @@ func newRichResponseWriter(w http.ResponseWriter) *richResponseWriter {
 	return &richResponseWriter{w, http.StatusOK}
 }
 
+// Initiate a structured JSON logger, taking in the specified log level for what is displayed at runtime.
 func InitJsonLogger(logLevel string) {
 	apiLogger = log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
 	apiLogger = log.With(
@@ -49,19 +50,23 @@ func InitJsonLogger(logLevel string) {
 	}
 }
 
+// Takes in a struct of keyvals and outputs a json log response to stdout at log level debug.
 func LogDebug(keyvals ...interface{}) {
 	_ = level.Debug(apiLogger).Log(keyvals...)
 }
 
+// Takes in a struct of keyvals and outputs a json log response to stdout at log level info.
 func LogInfo(keyvals ...interface{}) {
 	_ = level.Info(apiLogger).Log(keyvals...)
 }
 
+// Takes in a struct of keyvals and outputs a json log response to stdout at log level error.
 func LogError(keyvals ...interface{}) {
 	_ = level.Info(apiLogger).Log(keyvals...)
 }
 
-func Logger(handler http.Handler) http.Handler {
+// Custom logger which outputs HTTP response info as a json log to stdout.
+func HttpResponseLogger(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		requestUid := uuid.New()

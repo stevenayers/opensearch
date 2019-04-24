@@ -26,14 +26,15 @@ var DefinedRoutes = Routes{
 		Search,
 		[]string{
 			"url", "{url}",
-			"depth", "{depth}"},
+			"depth", "{depth}",
+		},
 	},
 }
 
 func NewRouter() *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	for _, route := range DefinedRoutes {
-		handler := logging.Logger(route.HandlerFunc)
+		handler := logging.HttpResponseLogger(route.HandlerFunc)
 		router.
 			Methods(route.Method).
 			Path(route.Pattern).
