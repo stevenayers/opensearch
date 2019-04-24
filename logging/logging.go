@@ -1,3 +1,7 @@
+/*
+Package logging provides custom logging to the clamber & api package. It's mostly a thin wrapper around go-kit's log.
+It also implements a richResponseWriter which allows us to log the HTTP status code.
+*/
 package logging
 
 import (

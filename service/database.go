@@ -1,12 +1,12 @@
 package service
 
 import (
-	"clamber/logging"
 	"context"
 	"fmt"
 	"github.com/dgraph-io/dgo"
 	dapi "github.com/dgraph-io/dgo/protos/api"
 	"github.com/google/uuid"
+	"github.com/stevenayers/clamber/logging"
 	"google.golang.org/grpc"
 	"strconv"
 	"strings"

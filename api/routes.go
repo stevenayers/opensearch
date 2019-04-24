@@ -1,8 +1,8 @@
 package api
 
 import (
-	"clamber/logging"
 	"github.com/gorilla/mux"
+	"github.com/stevenayers/clamber/logging"
 	"net/http"
 )
 

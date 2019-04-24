@@ -33,6 +33,7 @@ var (
 	Verbose    = flag.Bool("verbose", false, "Verbosity")
 )
 
+// Load config in from specified TOML file.
 func GetConfig() (conf Config) {
 	flag.Parse()
 	tomlData, err := ioutil.ReadFile(*ConfigFile)

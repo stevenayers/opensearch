@@ -1,8 +1,8 @@
 package service_test
 
 import (
-	"clamber/service"
 	"fmt"
+	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/suite"
 	"testing"
 )

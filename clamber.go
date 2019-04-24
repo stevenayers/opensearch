@@ -1,10 +1,10 @@
 package main
 
 import (
-	"clamber/api"
-	"clamber/logging"
-	"clamber/service"
 	"fmt"
+	"github.com/stevenayers/clamber/api"
+	"github.com/stevenayers/clamber/logging"
+	"github.com/stevenayers/clamber/service"
 	"log"
 	"net/http"
 )

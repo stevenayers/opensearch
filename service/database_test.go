@@ -1,8 +1,8 @@
 package service_test
 
 import (
-	"clamber/service"
 	"context"
+	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/assert"
 	"sync"
 	"time"

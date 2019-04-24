@@ -1,6 +1,3 @@
-/*
-Controls the crawling through a website's structure, also manages the crawl state.
-*/
 package service
 
 import (

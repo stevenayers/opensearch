@@ -1,13 +1,10 @@
-/*
- Package page fetches page data, converts the HTML into AlreadyCrawled, and formats the URLs
-*/
 package service
 
 import (
-	"clamber/logging"
 	"encoding/json"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/stevenayers/clamber/logging"
 	"net/http"
 	"net/url"
 	"path"

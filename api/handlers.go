@@ -1,12 +1,12 @@
 package api
 
 import (
-	"clamber/logging"
-	"clamber/service"
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/stevenayers/clamber/logging"
+	"github.com/stevenayers/clamber/service"
 	"log"
 	"net/http"
 	"net/url"

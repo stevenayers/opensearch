@@ -1,8 +1,9 @@
 # clamber
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/stevenayers/clamber)](https://goreportcard.com/report/github.com/stevenayers/clamber)
-[![Go Doc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/stevenayers/clamber)
 [![Release](https://img.shields.io/badge/release-v0.1--alpha-blue.svg)](https://github.com/stevenayers/clamber/releases/tag/v0.1-alpha)
+[![GoDoc](https://godoc.org/github.com/stevenayers/clamber?status.svg)](https://godoc.org/github.com/stevenayers/clamber)
+[![Dependencies](https://img.shields.io/badge/dependencies-reference-5272B4.svg)](https://godoc.org/github.com/stevenayers/clamber/service?imports)
 
 A distributed system designed to crawl the internet.
 

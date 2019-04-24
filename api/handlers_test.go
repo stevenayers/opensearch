@@ -1,7 +1,7 @@
 package api_test
 
 import (
-	"clamber/api"
+	"github.com/stevenayers/clamber/api"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
