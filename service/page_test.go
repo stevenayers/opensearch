@@ -60,18 +60,19 @@ func (s *StoreSuite) TestFetchUrlsHttpError() {
 // simulate a page with a given number of links, and check that the number of links
 // on the page reflect the number of links returned.
 // Another test case is checking correct errors from parseHtml
-// Would also test IsRelativeHtml regexs (very important to test Regex)
 
 func (s *StoreSuite) TestIsRelativeUrl() {
 	for _, test := range RelativeUrlTests {
-		assert.Equal(s.T(), test.IsRelative, service.IsRelativeUrl(test.Url))
+		p := &service.Page{}
+		assert.Equal(s.T(), test.IsRelative, p.IsRelativeUrl(test.Url))
 	}
 }
 
 func (s *StoreSuite) TestParseRelativeUrl() {
 	rootUrl := "http://example.edu"
 	for _, test := range ParseUrlTests {
-		absoluteUrl := service.ParseRelativeUrl(rootUrl, test.Url)
+		p := &service.Page{Url: rootUrl}
+		absoluteUrl := p.ParseRelativeUrl(test.Url)
 		assert.Equal(s.T(), test.ExpectedUrl, absoluteUrl.String())
 	}
 }

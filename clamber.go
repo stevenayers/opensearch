@@ -10,15 +10,16 @@ import (
 )
 
 func main() {
-	config := service.GetConfig()
-	logging.InitJsonLogger(config.General.LogLevel)
+	tempConfigFile := "./Config.toml"
+	service.InitConfig(tempConfigFile)
+	logging.InitJsonLogger(service.AppConfig.General.LogLevel)
 	router := api.NewRouter()
 	logging.LogInfo(
-		"port", config.General.Port,
+		"port", service.AppConfig.General.Port,
 		"msg", "clamber api started listening",
-		"config", *service.ConfigFile,
+		"config", tempConfigFile,
 	)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", config.General.Port), router)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", service.AppConfig.General.Port), router)
 	if err != nil {
 		log.Fatal(err)
 	}

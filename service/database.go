@@ -31,10 +31,9 @@ type (
 
 var DB Store
 
-func Connect(s *DbStore) {
-	config := GetConfig()
+func Connect(s *DbStore, dbConfig DatabaseConfig) {
 	var clients []dapi.DgraphClient
-	for _, connConfig := range config.Database.Connections {
+	for _, connConfig := range dbConfig.Connections {
 		connString := fmt.Sprintf("%s:%d", connConfig.Host, connConfig.Port)
 		conn, err := grpc.Dial(connString, grpc.WithInsecure())
 		if err != nil {

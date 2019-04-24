@@ -2,6 +2,8 @@ package api_test
 
 import (
 	"github.com/stevenayers/clamber/api"
+	"github.com/stevenayers/clamber/logging"
+	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -22,6 +24,9 @@ var QueryParamsTests = []QueryParamsTest{
 }
 
 func TestSearchHandler(t *testing.T) {
+	tempConfigFile := "../Config.toml"
+	service.InitConfig(tempConfigFile)
+	logging.InitJsonLogger(service.AppConfig.General.LogLevel)
 	for _, test := range QueryParamsTests {
 		req, _ := http.NewRequest("GET", "/search", nil)
 		q := req.URL.Query()

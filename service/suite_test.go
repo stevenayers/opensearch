@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"clamber/logging"
 	"fmt"
 	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/suite"
@@ -15,8 +16,11 @@ type (
 )
 
 func (s *StoreSuite) SetupSuite() {
+	tempConfigFile := "../Config.toml"
+	service.InitConfig(tempConfigFile)
+	logging.InitJsonLogger(service.AppConfig.General.LogLevel)
 	s.store = service.DbStore{}
-	service.Connect(&s.store)
+	service.Connect(&s.store, service.AppConfig.Database)
 	err := service.DB.DeleteAll()
 	if err != nil {
 		s.T().Fatal(err)

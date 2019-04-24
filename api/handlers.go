@@ -41,7 +41,7 @@ func SearchHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	query := Query{Url: vars["url"], Depth: depth}
 	store := service.DbStore{}
-	service.Connect(&store)
+	service.Connect(&store, service.AppConfig.Database)
 	ctx := context.Background()
 	txn := store.NewTxn()
 	result, err := service.DB.FindNode(&ctx, txn, query.Url, query.Depth)
