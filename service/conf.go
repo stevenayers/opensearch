@@ -28,7 +28,7 @@ type (
 )
 
 var (
-	ConfigFile = flag.String("config", "../Config.toml", "Config file path")
+	ConfigFile = flag.String("configfile", "../Config.toml", "Config file path")
 	Port       = flag.Int("port", 8000, "Port to listen on")
 	Verbose    = flag.Bool("verbose", false, "Verbosity")
 )

@@ -55,8 +55,8 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 	// end up spawning 2 goroutines for same result
 	doc.Find("a").Each(func(index int, item *goquery.Selection) {
 		href, ok := item.Attr("href")
-		if ok && IsRelativeUrl(href) && IsRelativeHtml(href) && href != "" {
-			absoluteUrl := ParseRelativeUrl(page.Url, href) // Standardises URL
+		if ok && page.IsRelativeUrl(href) && page.IsRelativeHtml(href) && href != "" {
+			absoluteUrl := page.ParseRelativeUrl(href) // Standardises URL
 			_, isPresent := localProcessed[absoluteUrl.Path]
 			if !isPresent {
 				localProcessed[absoluteUrl.Path] = struct{}{}
@@ -83,8 +83,8 @@ func (page *Page) MaxDepth() (countDepth int) {
 	return
 }
 
-func ParseRelativeUrl(rootUrl string, relativeUrl string) (absoluteUrl *url.URL) {
-	parsedRootUrl, err := url.Parse(rootUrl)
+func (page *Page) ParseRelativeUrl(relativeUrl string) (absoluteUrl *url.URL) {
+	parsedRootUrl, err := url.Parse(page.Url)
 	if err != nil {
 		return nil
 	}
@@ -96,12 +96,12 @@ func ParseRelativeUrl(rootUrl string, relativeUrl string) (absoluteUrl *url.URL)
 	return
 }
 
-func IsRelativeUrl(href string) bool {
+func (page *Page) IsRelativeUrl(href string) bool {
 	match, _ := regexp.MatchString("^(?:[a-zA-Z]+:)?//", href)
 	return !match
 }
 
-func IsRelativeHtml(href string) bool {
+func (page *Page) IsRelativeHtml(href string) bool {
 	htmlMatch, _ := regexp.MatchString(`(\.html$)`, href) // Doesn't cover all allowed file extensions
 	if htmlMatch {
 		return htmlMatch
