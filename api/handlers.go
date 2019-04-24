@@ -23,7 +23,9 @@ type (
 	}
 )
 
-func Search(w http.ResponseWriter, r *http.Request) {
+// Handler for /search endpoint. Initiates a database connection, tries to find the url in the database with the
+// required depth, and if it doesn't exist, initiate a crawl.
+func SearchHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	vars := mux.Vars(r)
 	depth, err := strconv.Atoi(vars["depth"])

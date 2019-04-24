@@ -23,7 +23,7 @@ var DefinedRoutes = Routes{
 		"Initiate",
 		"GET",
 		"/search",
-		Search,
+		SearchHandler,
 		[]string{
 			"url", "{url}",
 			"depth", "{depth}",
@@ -31,6 +31,7 @@ var DefinedRoutes = Routes{
 	},
 }
 
+// Initiates a mux router object with custom HTTP Response logger.
 func NewRouter() *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	for _, route := range DefinedRoutes {
