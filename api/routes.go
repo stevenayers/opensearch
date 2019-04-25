@@ -7,8 +7,10 @@ import (
 )
 
 type (
+	// Routes is slice of Route
 	Routes []Route
 
+	// Route contains all route data
 	Route struct {
 		Name        string
 		Method      string
@@ -18,6 +20,7 @@ type (
 	}
 )
 
+// DefinedRoutes contains defined routes data
 var DefinedRoutes = Routes{
 	Route{
 		"Initiate",
@@ -31,7 +34,7 @@ var DefinedRoutes = Routes{
 	},
 }
 
-// Initiates a mux router object with custom HTTP Response logger.
+// NewRouter function initiates a mux router object with custom HTTP Response logger.
 func NewRouter() *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	for _, route := range DefinedRoutes {

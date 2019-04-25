@@ -19,18 +19,10 @@ func (s *StoreSuite) SetupSuite() {
 	service.APILogger.InitJsonLogger(service.AppConfig.General.LogLevel)
 	s.store = service.DbStore{}
 	service.Connect(&s.store, service.AppConfig.Database)
-	err := service.DB.DeleteAll()
-	if err != nil {
-		s.T().Fatal(err)
-	}
-	err = s.store.SetSchema()
-	if err != nil {
-		s.T().Fatal(err)
-	}
 }
 
 func (s *StoreSuite) SetupTest() {
-	err := service.DB.DeleteAll()
+	err := s.store.DeleteAll()
 	if err != nil {
 		s.T().Fatal(err)
 	}

@@ -7,13 +7,14 @@ import (
 	"sync"
 )
 
+// Crawler holds objects related to the crawler
 type Crawler struct {
 	AlreadyCrawled map[string]struct{}
 	sync.Mutex
 	DbWaitGroup sync.WaitGroup
 }
 
-// function Crawl adds page to db (in a goroutine so it doesn't stop initiating other crawls), gets the child pages then
+// Crawl function adds page to db (in a goroutine so it doesn't stop initiating other crawls), gets the child pages then
 // initiates crawls for each one.
 func (crawler *Crawler) Crawl(currentPage *Page, depth int) {
 	resp, err := http.Get(currentPage.Url)

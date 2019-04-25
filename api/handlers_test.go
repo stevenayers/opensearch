@@ -22,7 +22,6 @@ var QueryParamsTests = []QueryParamsTest{
 }
 
 func (s *StoreSuite) TestSearchHandler() {
-	service.InitConfig()
 	service.APILogger.InitJsonLogger(service.AppConfig.General.LogLevel)
 	for _, test := range QueryParamsTests {
 		req, _ := http.NewRequest("GET", "/search", nil)

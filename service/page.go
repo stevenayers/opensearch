@@ -15,6 +15,8 @@ import (
 )
 
 type (
+
+	// Page holds page data
 	Page struct {
 		Uid       string  `json:"uid,omitempty"`
 		Url       string  `json:"url,omitempty"`
@@ -23,6 +25,7 @@ type (
 		Timestamp int64   `json:"timestamp,omitempty"`
 	}
 
+	// JsonPage is used to turn Page into a dgraph compatible struct
 	JsonPage struct {
 		Uid       string      `json:"uid,omitempty"`
 		Url       string      `json:"url,omitempty"`
@@ -30,12 +33,13 @@ type (
 		Children  []*JsonPage `json:"links,omitempty"`
 	}
 
+	// JsonPredicate is used to hold the Predicate result from dgraph
 	JsonPredicate struct {
 		Matching int `json:"matching"`
 	}
 )
 
-// Converts http response into child page objects
+// FetchChildPages function converts http response into child page objects
 func (page *Page) FetchChildPages(resp *http.Response) (childPages []*Page, err error) {
 	defer resp.Body.Close()
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
@@ -63,7 +67,7 @@ func (page *Page) FetchChildPages(resp *http.Response) (childPages []*Page, err 
 	return
 }
 
-// Gets the max depth of the recursive page structure
+// MaxDepth function gets the max depth of the recursive page structure
 func (page *Page) MaxDepth() (countDepth int) {
 	if page.Links != nil {
 		var childDepths []int
@@ -75,7 +79,7 @@ func (page *Page) MaxDepth() (countDepth int) {
 	return
 }
 
-// Parses a relative URL string into a URL object
+// ParseRelativeUrl function parses a relative URL string into a URL object
 func (page *Page) ParseRelativeUrl(relativeUrl string) (absoluteUrl *url.URL) {
 	parsedRootUrl, err := url.Parse(page.Url)
 	if err != nil {
@@ -89,21 +93,20 @@ func (page *Page) ParseRelativeUrl(relativeUrl string) (absoluteUrl *url.URL) {
 	return
 }
 
-// Checks for relative URL path
+// IsRelativeUrl function checks for relative URL path
 func (page *Page) IsRelativeUrl(href string) bool {
 	match, _ := regexp.MatchString("^(?:[a-zA-Z]+:)?//", href)
 	return !match
 }
 
-// Checks to see if relative URL points to a HTML file
+// IsRelativeHtml function checks to see if relative URL points to a HTML file
 func (page *Page) IsRelativeHtml(href string) bool {
 	htmlMatch, _ := regexp.MatchString(`(\.html$)`, href) // Doesn't cover all allowed file extensions
 	if htmlMatch {
 		return htmlMatch
-	} else {
-		match, _ := regexp.MatchString(`(\.[a-zA-Z0-9]+$)`, href)
-		return !match
 	}
+	match, _ := regexp.MatchString(`(\.[a-zA-Z0-9]+$)`, href)
+	return !match
 
 }
 

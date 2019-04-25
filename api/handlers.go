@@ -15,6 +15,7 @@ import (
 )
 
 type (
+	// Query contains queried URL, depth and the resulting page data
 	Query struct {
 		Url     string        `json:"url"`
 		Depth   int           `json:"depth"`
@@ -22,7 +23,7 @@ type (
 	}
 )
 
-// Handler for /search endpoint. Initiates a database connection, tries to find the url in the database with the
+// SearchHandler function handles /search endpoint. Initiates a database connection, tries to find the url in the database with the
 // required depth, and if it doesn't exist, initiate a crawl.
 func SearchHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")

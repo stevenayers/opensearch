@@ -8,8 +8,13 @@ services:
   - docker
 
 before_install:
-  - docker run -d -p 5080:5080 -p 6080:6080 -p 9080:9080 --name dgraph dgraph/dgraph dgraph zero
-  - docker exec -d dgraph dgraph alpha --lru_mb 4096 --zero localhost:5080
+  - docker-compose -f docs/dgraph-test-compose.yaml up &
 
 
-script: go test -v ./...
+script:
+  - go test -v -coverprofile=api.txt -covermode=atomic ./api/...
+  - go test -v -coverprofile=coverage.txt -covermode=atomic ./service/...
+  - cat api.txt >> coverage.txt
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

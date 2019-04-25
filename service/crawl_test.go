@@ -19,6 +19,8 @@ type (
 var (
 	CrawlTests = []CrawlTest{
 		{"https://golang.org", 2},
+		{"https://youtube.com", 2},
+		{"https://google.com", 2},
 	}
 
 	PageReturnTests = []string{

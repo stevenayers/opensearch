@@ -1,5 +1,6 @@
 # clamber
-
+[![Build Status](https://travis-ci.org/stevenayers/clamber.svg?branch=master)](https://travis-ci.org/stevenayers/clamber)
+[![codecov.io Code Coverage](https://img.shields.io/codecov/c/github/stevenayers/clamber.svg)](https://codecov.io/github/stevenayers/clamber?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/stevenayers/clamber)](https://goreportcard.com/report/github.com/stevenayers/clamber)
 [![Release](https://img.shields.io/badge/release-v0.1--alpha-blue.svg)](https://github.com/stevenayers/clamber/releases/tag/v0.1-alpha)
 [![GoDoc](https://godoc.org/github.com/stevenayers/clamber?status.svg)](https://godoc.org/github.com/stevenayers/clamber)
@@ -30,14 +31,7 @@ Warning: Expect performance issues when running clamber and dgraph locally, avoi
     ```bash
     mkdir -p ~/dgraph
     
-    # Run dgraphzero
-    docker run -i -p 5080:5080 -p 6080:6080 -p 8080:8080 -p 9080:9080 -p 8008:8008 -v ~/dgraph:/dgraph --name dgraph dgraph/dgraph dgraph zero
-    
-    # In another terminal, now run dgraph
-    docker exec -i dgraph dgraph alpha --lru_mb 4096 --zero localhost:5080
-    
-    # And in another, run ratel (Dgraph UI)
-    docker exec -i dgraph dgraph-ratel -port 8008
+    docker-compose -f docs/docker-compose.yaml up
     ```
 1. Run clamber
     ```bash
