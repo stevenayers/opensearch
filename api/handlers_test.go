@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
-	"testing"
 )
 
 type QueryParamsTest struct {
@@ -22,7 +21,7 @@ var QueryParamsTests = []QueryParamsTest{
 	{"https://golang.org", 3, false},
 }
 
-func TestSearchHandler(t *testing.T) {
+func (s *StoreSuite) TestSearchHandler() {
 	service.InitConfig()
 	service.APILogger.InitJsonLogger(service.AppConfig.General.LogLevel)
 	for _, test := range QueryParamsTests {
@@ -34,6 +33,6 @@ func TestSearchHandler(t *testing.T) {
 		response := httptest.NewRecorder()
 		router := api.NewRouter()
 		router.ServeHTTP(response, req)
-		assert.Equal(t, 200, response.Code, "NotFound response is expected")
+		assert.Equal(s.T(), 200, response.Code, "NotFound response is expected")
 	}
 }
