@@ -1,6 +1,7 @@
 package service
 
 import (
+	"flag"
 	"github.com/BurntSushi/toml"
 	"io/ioutil"
 	"log"
@@ -27,15 +28,16 @@ type (
 )
 
 var (
-	// Bug with flag redefined in service package tests.
-	//ConfigFile = flag.String("config", "../Config.toml", "Config file path")
-	//Port       = flag.Int("port", 8002, "Port to listen on")
-	//Verbose    = flag.Bool("verbose", false, "Verbosity")
-	AppConfig Config
+	ConfigFile = flag.String("config", "../Config.toml", "Config file path")
+	Port       = flag.Int("port", 8002, "Port to listen on")
+	Verbose    = flag.Bool("verbose", false, "Verbosity")
+	AppConfig  Config
 )
 
 // Load config in from specified TOML file.
-func InitConfig(configFile string) {
+func InitConfig() {
+	flag.Parse()
+	configFile := *ConfigFile
 	tomlData, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		log.Fatalf("Could not read config file: %s - %s", configFile, err.Error())

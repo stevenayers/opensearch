@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/mux"
-	"github.com/stevenayers/clamber/logging"
 	"github.com/stevenayers/clamber/service"
 	"log"
 	"net/http"
@@ -51,7 +50,7 @@ func SearchHandler(w http.ResponseWriter, r *http.Request) {
 	var crawler service.Crawler
 	if result == nil {
 		start := time.Now()
-		logging.LogDebug(
+		service.APILogger.LogDebug(
 			"uid", r.Header.Get("Clamber-Request-ID"),
 			"url", query.Url,
 			"depth", query.Depth,
@@ -62,7 +61,7 @@ func SearchHandler(w http.ResponseWriter, r *http.Request) {
 		crawler.Crawl(result, query.Depth)
 		go func() {
 			crawler.DbWaitGroup.Wait()
-			logging.LogDebug(
+			service.APILogger.LogDebug(
 				"uid", r.Header.Get("Clamber-Request-ID"),
 				"url", query.Url,
 				"depth", query.Depth,

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/stevenayers/clamber/logging"
 	"net/http"
 	"net/url"
 	"path"
@@ -39,7 +38,7 @@ type (
 func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 	resp, err := http.Get(page.Url)
 	if err != nil {
-		logging.LogDebug("context", "failed to get URL", "url", page.Url, "msg", err.Error())
+		APILogger.LogDebug("context", "failed to get URL", "url", page.Url, "msg", err.Error())
 		return
 	}
 	defer resp.Body.Close()                                               // Closes response body FetchUrls function is done.
@@ -48,7 +47,7 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 	}
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
-		logging.LogDebug("context", "failed to parse HTML", "url", page.Url, "msg", err.Error())
+		APILogger.LogDebug("context", "failed to parse HTML", "url", page.Url, "msg", err.Error())
 		return
 	}
 	localProcessed := make(map[string]struct{}) // Ensures we don't store the same Url twice and

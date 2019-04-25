@@ -6,7 +6,6 @@ import (
 	"github.com/dgraph-io/dgo"
 	dapi "github.com/dgraph-io/dgo/protos/api"
 	"github.com/google/uuid"
-	"github.com/stevenayers/clamber/logging"
 	"google.golang.org/grpc"
 	"strconv"
 	"strings"
@@ -71,7 +70,7 @@ func (store *DbStore) Create(currentPage *Page) (err error) {
 	ctx := context.Background()
 	currentUid, err = store.FindOrCreateNode(&ctx, currentPage)
 	if err != nil {
-		logging.LogError(
+		APILogger.LogError(
 			"msg", err.Error(),
 			"context", "create current page",
 			"url", currentPage.Url,
@@ -83,7 +82,7 @@ func (store *DbStore) Create(currentPage *Page) (err error) {
 		var parentUid string
 		parentUid, err = store.FindOrCreateNode(&ctx, currentPage.Parent)
 		if err != nil {
-			logging.LogError(
+			APILogger.LogError(
 				"msg", err.Error(),
 				"context", "create parent page",
 				"url", currentPage.Parent.Url,
@@ -93,7 +92,7 @@ func (store *DbStore) Create(currentPage *Page) (err error) {
 		}
 		err = store.CheckOrCreatePredicate(&ctx, parentUid, currentUid)
 		if err != nil {
-			logging.LogError(
+			APILogger.LogError(
 				"context", "create predicate",
 				"msg", err.Error(),
 				"parentUid", parentUid,

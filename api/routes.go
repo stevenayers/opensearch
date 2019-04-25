@@ -2,7 +2,7 @@ package api
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/stevenayers/clamber/logging"
+	"github.com/stevenayers/clamber/service"
 	"net/http"
 )
 
@@ -35,7 +35,7 @@ var DefinedRoutes = Routes{
 func NewRouter() *mux.Router {
 	router := mux.NewRouter().StrictSlash(true)
 	for _, route := range DefinedRoutes {
-		handler := logging.HttpResponseLogger(route.HandlerFunc)
+		handler := service.HttpResponseLogger(route.HandlerFunc)
 		router.
 			Methods(route.Method).
 			Path(route.Pattern).

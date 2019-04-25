@@ -1,8 +1,4 @@
-/*
-Package logging provides custom logging to the clamber & api package. It's mostly a thin wrapper around go-kit's log.
-It also implements a richResponseWriter which allows us to log the HTTP status code.
-*/
-package logging
+package service
 
 import (
 	"fmt"
@@ -14,12 +10,17 @@ import (
 	"time"
 )
 
-var apiLogger log.Logger
+var APILogger ApiLogger
 
-type richResponseWriter struct {
-	http.ResponseWriter
-	statusCode int
-}
+type (
+	richResponseWriter struct {
+		http.ResponseWriter
+		statusCode int
+	}
+	ApiLogger struct {
+		Logger log.Logger
+	}
+)
 
 func (w *richResponseWriter) WriteHeader(code int) {
 	w.statusCode = code
@@ -31,38 +32,38 @@ func newRichResponseWriter(w http.ResponseWriter) *richResponseWriter {
 }
 
 // Initiate a structured JSON logger, taking in the specified log level for what is displayed at runtime.
-func InitJsonLogger(logLevel string) {
-	apiLogger = log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
-	apiLogger = log.With(
-		apiLogger,
+func (apiLogger *ApiLogger) InitJsonLogger(logLevel string) {
+	apiLogger.Logger = log.NewJSONLogger(log.NewSyncWriter(os.Stdout))
+	apiLogger.Logger = log.With(
+		apiLogger.Logger,
 		"service", "clamber-api",
 		"node", uuid.New().String(),
 	)
 	switch logLevel {
 	case "debug":
-		apiLogger = level.NewFilter(apiLogger, level.AllowDebug())
+		apiLogger.Logger = level.NewFilter(apiLogger.Logger, level.AllowDebug())
 	case "info":
-		apiLogger = level.NewFilter(apiLogger, level.AllowInfo())
+		apiLogger.Logger = level.NewFilter(apiLogger.Logger, level.AllowInfo())
 	case "error":
-		apiLogger = level.NewFilter(apiLogger, level.AllowError())
+		apiLogger.Logger = level.NewFilter(apiLogger.Logger, level.AllowError())
 	default:
-		apiLogger = level.NewFilter(apiLogger, level.AllowInfo())
+		apiLogger.Logger = level.NewFilter(apiLogger.Logger, level.AllowInfo())
 	}
 }
 
 // Takes in a struct of keyvals and outputs a json log response to stdout at log level debug.
-func LogDebug(keyvals ...interface{}) {
-	_ = level.Debug(apiLogger).Log(keyvals...)
+func (apiLogger *ApiLogger) LogDebug(keyvals ...interface{}) {
+	_ = level.Debug(apiLogger.Logger).Log(keyvals...)
 }
 
 // Takes in a struct of keyvals and outputs a json log response to stdout at log level info.
-func LogInfo(keyvals ...interface{}) {
-	_ = level.Info(apiLogger).Log(keyvals...)
+func (apiLogger *ApiLogger) LogInfo(keyvals ...interface{}) {
+	_ = level.Info(apiLogger.Logger).Log(keyvals...)
 }
 
 // Takes in a struct of keyvals and outputs a json log response to stdout at log level error.
-func LogError(keyvals ...interface{}) {
-	_ = level.Info(apiLogger).Log(keyvals...)
+func (apiLogger *ApiLogger) LogError(keyvals ...interface{}) {
+	_ = level.Info(apiLogger.Logger).Log(keyvals...)
 }
 
 // Custom logger which outputs HTTP response info as a json log to stdout.
@@ -73,7 +74,7 @@ func HttpResponseLogger(handler http.Handler) http.Handler {
 		r.Header.Add("Clamber-Request-ID", requestUid.String())
 		rw := newRichResponseWriter(w)
 		handler.ServeHTTP(rw, r)
-		LogInfo(
+		APILogger.LogInfo(
 			"uid", requestUid.String(),
 			"uri", r.URL.Path+"?"+r.URL.RawQuery,
 			"statusCode", rw.statusCode,
