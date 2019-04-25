@@ -3,6 +3,7 @@ package service_test
 import (
 	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/assert"
+	"net/http"
 )
 
 type (
@@ -52,7 +53,10 @@ var ParseUrlTests = []ParseUrlTest{
 func (s *StoreSuite) TestFetchUrlsHttpError() {
 	for _, test := range FetchUrlTests {
 		thisPage := service.Page{Url: test.Url}
-		_, err := thisPage.FetchChildPages()
+		_, err := http.Get(thisPage.Url)
+		if err != nil {
+			service.APILogger.LogDebug("context", "failed to get URL", "url", thisPage.Url, "msg", err.Error())
+		}
 		assert.Equal(s.T(), test.httpError, err != nil)
 	}
 }

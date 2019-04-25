@@ -35,27 +35,19 @@ type (
 	}
 )
 
-func (page *Page) FetchChildPages() (childPages []*Page, err error) {
-	resp, err := http.Get(page.Url)
-	if err != nil {
-		APILogger.LogDebug("context", "failed to get URL", "url", page.Url, "msg", err.Error())
-		return
-	}
-	defer resp.Body.Close()                                               // Closes response body FetchUrls function is done.
-	if !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") { // Check if HTML file
-		return
-	}
+// Converts http response into child page objects
+func (page *Page) FetchChildPages(resp *http.Response) (childPages []*Page, err error) {
+	defer resp.Body.Close()
 	doc, err := goquery.NewDocumentFromReader(resp.Body)
 	if err != nil {
 		APILogger.LogDebug("context", "failed to parse HTML", "url", page.Url, "msg", err.Error())
 		return
 	}
-	localProcessed := make(map[string]struct{}) // Ensures we don't store the same Url twice and
-	// end up spawning 2 goroutines for same result
+	localProcessed := make(map[string]struct{})
 	doc.Find("a").Each(func(index int, item *goquery.Selection) {
 		href, ok := item.Attr("href")
 		if ok && page.IsRelativeUrl(href) && page.IsRelativeHtml(href) && href != "" {
-			absoluteUrl := page.ParseRelativeUrl(href) // Standardises URL
+			absoluteUrl := page.ParseRelativeUrl(href)
 			_, isPresent := localProcessed[absoluteUrl.Path]
 			if !isPresent {
 				localProcessed[absoluteUrl.Path] = struct{}{}
@@ -71,6 +63,7 @@ func (page *Page) FetchChildPages() (childPages []*Page, err error) {
 	return
 }
 
+// Gets the max depth of the recursive page structure
 func (page *Page) MaxDepth() (countDepth int) {
 	if page.Links != nil {
 		var childDepths []int
@@ -82,6 +75,7 @@ func (page *Page) MaxDepth() (countDepth int) {
 	return
 }
 
+// Parses a relative URL string into a URL object
 func (page *Page) ParseRelativeUrl(relativeUrl string) (absoluteUrl *url.URL) {
 	parsedRootUrl, err := url.Parse(page.Url)
 	if err != nil {
@@ -95,11 +89,13 @@ func (page *Page) ParseRelativeUrl(relativeUrl string) (absoluteUrl *url.URL) {
 	return
 }
 
+// Checks for relative URL path
 func (page *Page) IsRelativeUrl(href string) bool {
 	match, _ := regexp.MatchString("^(?:[a-zA-Z]+:)?//", href)
 	return !match
 }
 
+// Checks to see if relative URL points to a HTML file
 func (page *Page) IsRelativeHtml(href string) bool {
 	htmlMatch, _ := regexp.MatchString(`(\.html$)`, href) // Doesn't cover all allowed file extensions
 	if htmlMatch {
@@ -111,6 +107,7 @@ func (page *Page) IsRelativeHtml(href string) bool {
 
 }
 
+// Converts JSONPage into a Page
 func convertToPage(parentPage *Page, jsonPage *JsonPage) (currentPage *Page) {
 	currentPage = &Page{
 		Uid:       jsonPage.Uid,
@@ -141,6 +138,7 @@ func convertToPage(parentPage *Page, jsonPage *JsonPage) (currentPage *Page) {
 	return
 }
 
+// Converts a Page to a JSONPage
 func convertToJsonPage(currentPage *Page) (jsonPage JsonPage) {
 	return JsonPage{
 		Url:       currentPage.Url,
@@ -148,6 +146,7 @@ func convertToJsonPage(currentPage *Page) (jsonPage JsonPage) {
 	}
 }
 
+// Turns a Page into a JSON string
 func serializePage(currentPage *Page) (pb []byte, err error) {
 	p := convertToJsonPage(currentPage)
 	pb, err = json.Marshal(p)
@@ -157,6 +156,7 @@ func serializePage(currentPage *Page) (pb []byte, err error) {
 	return
 }
 
+// Turns JSON dgraph result into a Page
 func deserializePage(pb []byte) (currentPage *Page, err error) {
 	jsonMap := make(map[string][]JsonPage)
 	err = json.Unmarshal(pb, &jsonMap)
@@ -167,6 +167,7 @@ func deserializePage(pb []byte) (currentPage *Page, err error) {
 	return
 }
 
+// Checks JSON dgraph edge result to see if edge exists
 func deserializePredicate(pb []byte) (exists bool, err error) {
 	jsonMap := make(map[string][]JsonPredicate)
 	err = json.Unmarshal(pb, &jsonMap)
@@ -182,6 +183,7 @@ func deserializePredicate(pb []byte) (exists bool, err error) {
 	return
 }
 
+// Return max int in slice
 func maxIntSlice(v []int) int {
 	sort.Ints(v)
 	return v[len(v)-1]

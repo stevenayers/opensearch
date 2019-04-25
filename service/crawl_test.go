@@ -3,6 +3,7 @@ package service_test
 import (
 	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/assert"
+	"net/http"
 	"sync"
 	"testing"
 	"time"
@@ -22,7 +23,7 @@ var (
 
 	PageReturnTests = []string{
 		"https://golang.org",
-		"http://example.com",
+		"http://example.edu",
 		"https://google.com",
 	}
 )
@@ -45,10 +46,15 @@ func (s *StoreSuite) TestAllPagesReturned() {
 	for _, testUrl := range PageReturnTests {
 		crawler := service.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
 		rootPage := service.Page{Url: testUrl, Timestamp: time.Now().Unix()}
-		Urls, _ := rootPage.FetchChildPages()
-		crawler.Crawl(&rootPage, 1)
-		crawler.DbWaitGroup.Wait()
-		assert.Equal(s.T(), len(Urls), len(rootPage.Links), "page.Links and fetch Urls length expected to match.")
+		resp, err := http.Get(rootPage.Url)
+		var Urls []*service.Page
+		if err != nil {
+			service.APILogger.LogDebug("context", "failed to get URL", "url", rootPage.Url, "msg", err.Error())
+			Urls, _ = rootPage.FetchChildPages(resp)
+			crawler.Crawl(&rootPage, 1)
+			crawler.DbWaitGroup.Wait()
+			assert.Equal(s.T(), len(Urls), len(rootPage.Links), "page.Links and fetch Urls length expected to match.")
+		}
 	}
 }
 

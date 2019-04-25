@@ -30,6 +30,7 @@ type (
 
 var DB Store
 
+// Initiates connections to database
 func Connect(s *DbStore, dbConfig DatabaseConfig) {
 	var clients []dapi.DgraphClient
 	for _, connConfig := range dbConfig.Connections {
@@ -44,6 +45,7 @@ func Connect(s *DbStore, dbConfig DatabaseConfig) {
 	DB = s
 }
 
+// Sets schema for dgraph (mainly for tests)
 func (store *DbStore) SetSchema() (err error) {
 	op := &dapi.Operation{}
 	op.Schema = `
@@ -59,11 +61,14 @@ func (store *DbStore) SetSchema() (err error) {
 	return
 }
 
+// Deletes all data in database
 func (store *DbStore) DeleteAll() (err error) {
 	err = store.Alter(context.Background(), &dapi.Operation{DropAll: true})
 	return
 }
 
+// Checks for current page, creates if doesn't exist. Checks for parent page, creates if doesn't exist. Checks for edge
+// between them, creates if doesn't exist.
 func (store *DbStore) Create(currentPage *Page) (err error) {
 	uid := uuid.New().String()
 	var currentUid string
@@ -108,6 +113,7 @@ func (store *DbStore) Create(currentPage *Page) (err error) {
 	return
 }
 
+// Find Page by URL and depth
 func (store *DbStore) FindNode(ctx *context.Context, txn *dgo.Txn, Url string, depth int) (currentPage *Page, err error) {
 	queryDepth := strconv.Itoa(depth + 1)
 	variables := map[string]string{"$url": Url}
@@ -134,6 +140,7 @@ func (store *DbStore) FindNode(ctx *context.Context, txn *dgo.Txn, Url string, d
 	return
 }
 
+// Checks for page, creates if doesn't exist.
 func (store *DbStore) FindOrCreateNode(ctx *context.Context, currentPage *Page) (uid string, err error) {
 	for uid == "" {
 		var assigned *dapi.Assigned
@@ -171,6 +178,7 @@ func (store *DbStore) FindOrCreateNode(ctx *context.Context, currentPage *Page) 
 	return
 }
 
+// Checks to see if edge exists
 func (store *DbStore) CheckPredicate(ctx *context.Context, txn *dgo.Txn, parentUid string, childUid string) (exists bool, err error) {
 	variables := map[string]string{"$parentUid": parentUid, "$childUid": childUid}
 	q := `query withvar($parentUid: string, $childUid: string){
@@ -187,6 +195,7 @@ func (store *DbStore) CheckPredicate(ctx *context.Context, txn *dgo.Txn, parentU
 	return
 }
 
+// Checks for edge, creates if doesn't exist.
 func (store *DbStore) CheckOrCreatePredicate(ctx *context.Context, parentUid string, childUid string) (err error) {
 	attempts := 10
 	exists := false
