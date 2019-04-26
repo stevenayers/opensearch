@@ -24,11 +24,11 @@ type (
 
 	// DatabaseConfig holds database section of toml config
 	DatabaseConfig struct {
-		Connections []*Connections
+		Connections []*Connection
 	}
 
-	// Connections holds the database connection data
-	Connections struct {
+	// Connection holds the database connection data
+	Connection struct {
 		Host string
 		Port int
 	}
@@ -48,17 +48,24 @@ var (
 	AppConfig Config
 )
 
-// InitConfig loads config in from specified TOML file.
-func InitConfig() {
+// InitFlags loads flags into global var AppFlags
+func InitFlags() {
 	AppFlags.ConfigFile = flag.String("config", "../cmd/Config.toml", "Config file path")
 	AppFlags.Port = flag.Int("port", 8002, "Port to listen on")
 	AppFlags.Verbose = flag.Bool("verbose", false, "Verbosity")
 	flag.Parse()
+}
+
+// InitConfig loads config in from specified TOML file.
+func InitConfig() (err error) {
 	tomlData, err := ioutil.ReadFile(*AppFlags.ConfigFile)
 	if err != nil {
-		log.Fatalf("Could not read config file: %s - %s", *AppFlags.ConfigFile, err.Error())
+		log.Printf("Could not read config file: %s - %s", *AppFlags.ConfigFile, err.Error())
+		return
 	}
-	if _, err := toml.Decode(string(tomlData), &AppConfig); err != nil {
-		log.Fatalf("Could not parse TOML config: %s - %s", *AppFlags.ConfigFile, err.Error())
+	_, err = toml.Decode(string(tomlData), &AppConfig)
+	if err != nil {
+		log.Printf("Could not parse TOML config: %s - %s", *AppFlags.ConfigFile, err.Error())
 	}
+	return
 }

@@ -2,8 +2,11 @@ package service_test
 
 import (
 	"fmt"
+	kitlog "github.com/go-kit/kit/log"
 	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/suite"
+	"os"
+	"strings"
 	"testing"
 )
 
@@ -15,20 +18,32 @@ type (
 )
 
 func (s *StoreSuite) SetupSuite() {
-	service.InitConfig()
-	service.APILogger.InitJsonLogger(service.AppConfig.General.LogLevel)
+	service.InitFlags()
+	err := service.InitConfig()
+	if err != nil {
+		s.T().Fatal(err)
+	}
+	service.APILogger.InitJsonLogger(kitlog.NewSyncWriter(os.Stdout), service.AppConfig.General.LogLevel)
 	s.store = service.DbStore{}
 	service.Connect(&s.store, service.AppConfig.Database)
 }
 
 func (s *StoreSuite) SetupTest() {
-	err := s.store.DeleteAll()
+	*service.AppFlags.ConfigFile = "../cmd/Config.toml"
+	err := service.InitConfig()
 	if err != nil {
 		s.T().Fatal(err)
 	}
-	err = s.store.SetSchema()
-	if err != nil {
-		s.T().Fatal(err)
+	service.Connect(&s.store, service.AppConfig.Database)
+	if !strings.Contains(s.T().Name(), "TestLog") && !strings.Contains(s.T().Name(), "TestConnect") {
+		err := s.store.DeleteAll()
+		if err != nil {
+			s.T().Fatal(err)
+		}
+		err = s.store.SetSchema()
+		if err != nil {
+			s.T().Fatal(err)
+		}
 	}
 }
 

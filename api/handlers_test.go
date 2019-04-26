@@ -2,7 +2,6 @@ package api_test
 
 import (
 	"github.com/stevenayers/clamber/api"
-	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -22,7 +21,6 @@ var QueryParamsTests = []QueryParamsTest{
 }
 
 func (s *StoreSuite) TestSearchHandler() {
-	service.APILogger.InitJsonLogger(service.AppConfig.General.LogLevel)
 	for _, test := range QueryParamsTests {
 		req, _ := http.NewRequest("GET", "/search", nil)
 		q := req.URL.Query()

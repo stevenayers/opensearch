@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 	"sync"
@@ -19,7 +18,7 @@ type Crawler struct {
 func (crawler *Crawler) Crawl(currentPage *Page, depth int) {
 	resp, err := http.Get(currentPage.Url)
 	if err != nil {
-		APILogger.LogDebug("context", "failed to get URL", "url", currentPage.Url, "msg", err.Error())
+		_ = APILogger.LogError("context", "failed to get URL", "url", currentPage.Url, "msg", err.Error())
 		return
 	}
 	crawler.DbWaitGroup.Add(1)
@@ -27,8 +26,7 @@ func (crawler *Crawler) Crawl(currentPage *Page, depth int) {
 		defer crawler.DbWaitGroup.Done()
 		err := DB.Create(currentPage)
 		if err != nil {
-			fmt.Print(currentPage.Url)
-			panic(err)
+			return
 		}
 	}(currentPage)
 	if crawler.hasAlreadyCrawled(currentPage.Url) || depth <= 0 ||

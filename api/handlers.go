@@ -35,7 +35,7 @@ func SearchHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	_, err = url.Parse(vars["url"])
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		w.WriteHeader(http.StatusBadRequest)
 		log.Fatal(err.Error())
 		return
 	}

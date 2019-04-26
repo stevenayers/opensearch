@@ -2,7 +2,7 @@
 
   [[database.connections]]
     host = "localhost"
-    port = 9080
+    port = "9080"
 
 
 [general]

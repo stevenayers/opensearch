@@ -2,8 +2,10 @@ package api_test
 
 import (
 	"fmt"
+	kitlog "github.com/go-kit/kit/log"
 	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/suite"
+	"os"
 	"testing"
 )
 
@@ -15,8 +17,12 @@ type (
 )
 
 func (s *StoreSuite) SetupSuite() {
-	service.InitConfig()
-	service.APILogger.InitJsonLogger(service.AppConfig.General.LogLevel)
+	service.InitFlags()
+	err := service.InitConfig()
+	if err != nil {
+		s.T().Fatal(err)
+	}
+	service.APILogger.InitJsonLogger(kitlog.NewSyncWriter(os.Stdout), service.AppConfig.General.LogLevel)
 	s.store = service.DbStore{}
 	service.Connect(&s.store, service.AppConfig.Database)
 }

@@ -8,7 +8,7 @@ services:
   - docker
 
 before_install:
-  - docker-compose -f docs/dgraph-test-compose.yaml up &
+  - docker-compose -f test/dgraph-test-compose.yaml up &
 
 
 script:

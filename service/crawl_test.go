@@ -1,7 +1,10 @@
 package service_test
 
 import (
+	"bytes"
 	"github.com/stevenayers/clamber/service"
+	"encoding/json"
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"sync"
@@ -19,14 +22,25 @@ type (
 var (
 	CrawlTests = []CrawlTest{
 		{"https://golang.org", 2},
-		{"https://youtube.com", 2},
-		{"https://google.com", 2},
+		{"https://youtube.com", 1},
+		{"https://google.com", 1},
 	}
 
 	PageReturnTests = []string{
 		"https://golang.org",
 		"http://example.edu",
 		"https://google.com",
+	}
+
+	CrawlBadCreateTests = []string{
+		"https://golang.org",
+		"http://example.edu",
+		"https://google.com",
+	}
+
+	CrawlBadUrlTests = []string{
+		"https://fake.link.local",
+		"http://another.fake.link.local",
 	}
 )
 
@@ -44,6 +58,45 @@ func (s *StoreSuite) TestAlreadyCrawled() {
 	}
 }
 
+func (s *StoreSuite) TestCrawlBadUrl() {
+	for _, testUrl := range CrawlBadUrlTests {
+		buf := new(bytes.Buffer)
+		service.APILogger = service.ApiLogger{}
+		var logOutput LogOutput
+		service.APILogger.InitJsonLogger(buf, "debug")
+		crawler := service.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
+		rootPage := service.Page{Url: testUrl, Timestamp: time.Now().Unix()}
+		crawler.Crawl(&rootPage, 0)
+		err := json.Unmarshal(buf.Bytes(), &logOutput)
+		if err != nil {
+			s.T().Fatal(err)
+		}
+		assert.Equal(s.T(), "error", logOutput.Level)
+		assert.Equal(s.T(), "failed to get URL", logOutput.Context)
+	}
+}
+
+func (s *StoreSuite) TestCrawlBadCreate() {
+	for _, testUrl := range CrawlBadCreateTests {
+		buf := new(bytes.Buffer)
+		service.APILogger = service.ApiLogger{}
+		var logOutput LogOutput
+		service.APILogger.InitJsonLogger(buf, "debug")
+		crawler := service.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
+		rootPage := service.Page{Url: testUrl, Timestamp: time.Now().Unix()}
+		_ = s.store.DeleteAll()
+		crawler.Crawl(&rootPage, 0)
+		crawler.DbWaitGroup.Wait()
+		err := json.Unmarshal(buf.Bytes(), &logOutput)
+		if err != nil {
+			s.T().Fatal(err)
+		}
+		fmt.Print(logOutput.Context)
+		assert.Equal(s.T(), "error", logOutput.Level)
+
+	}
+}
+
 func (s *StoreSuite) TestAllPagesReturned() {
 	for _, testUrl := range PageReturnTests {
 		crawler := service.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
@@ -51,7 +104,7 @@ func (s *StoreSuite) TestAllPagesReturned() {
 		resp, err := http.Get(rootPage.Url)
 		var Urls []*service.Page
 		if err != nil {
-			service.APILogger.LogDebug("context", "failed to get URL", "url", rootPage.Url, "msg", err.Error())
+			_ = service.APILogger.LogDebug("context", "failed to get URL", "url", rootPage.Url, "msg", err.Error())
 			Urls, _ = rootPage.FetchChildPages(resp)
 			crawler.Crawl(&rootPage, 1)
 			crawler.DbWaitGroup.Wait()

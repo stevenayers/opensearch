@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/dgraph-io/dgo"
 	dapi "github.com/dgraph-io/dgo/protos/api"
@@ -18,9 +19,9 @@ type (
 		DeleteAll() (err error)
 		Create(currentPage *Page) (err error)
 		FindNode(ctx *context.Context, txn *dgo.Txn, url string, depth int) (currentPage *Page, err error)
-		FindOrCreateNode(ctx *context.Context, currentPage *Page) (uid string, err error)
+		FindOrCreateNode(ctx *context.Context, txn *dgo.Txn, currentPage *Page) (uid string, err error)
 		CheckPredicate(ctx *context.Context, txn *dgo.Txn, parentUid string, childUid string) (exists bool, err error)
-		CheckOrCreatePredicate(ctx *context.Context, parentUid string, childUid string) (err error)
+		CheckOrCreatePredicate(ctx *context.Context, txn *dgo.Txn, parentUid string, childUid string) (exists bool, err error)
 	}
 
 	// DbStore holds dgraph client and connections
@@ -37,15 +38,14 @@ var DB Store
 func Connect(s *DbStore, dbConfig DatabaseConfig) {
 	var clients []dapi.DgraphClient
 	for _, connConfig := range dbConfig.Connections {
+		var conn *grpc.ClientConn
 		connString := fmt.Sprintf("%s:%d", connConfig.Host, connConfig.Port)
-		conn, err := grpc.Dial(connString, grpc.WithInsecure())
-		if err != nil {
-			fmt.Print(err)
-		}
+		conn, _ = grpc.Dial(connString, grpc.WithInsecure())
 		clients = append(clients, dapi.NewDgraphClient(conn))
 	}
 	s.Dgraph = dgo.NewDgraphClient(clients...)
 	DB = s
+	return
 }
 
 // SetSchema function sets the schema for dgraph (mainly for tests)
@@ -59,7 +59,7 @@ func (store *DbStore) SetSchema() (err error) {
 	ctx := context.TODO()
 	err = store.Alter(ctx, op)
 	if err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 	}
 	return
 }
@@ -73,43 +73,66 @@ func (store *DbStore) DeleteAll() (err error) {
 // Create function checks for current page, creates if doesn't exist. Checks for parent page, creates if doesn't exist. Checks for edge
 // between them, creates if doesn't exist.
 func (store *DbStore) Create(currentPage *Page) (err error) {
-	uid := uuid.New().String()
-	var currentUid string
+	txnUid := uuid.New().String()
 	ctx := context.Background()
-	currentUid, err = store.FindOrCreateNode(&ctx, currentPage)
-	if err != nil {
-		APILogger.LogError(
-			"msg", err.Error(),
-			"context", "create current page",
-			"url", currentPage.Url,
-			"uid", uid,
-		)
-		return
+	var currentUid string
+	for currentUid == "" {
+		txn := store.NewTxn()
+		currentUid, err = store.FindOrCreateNode(&ctx, txn, currentPage)
+		if err != nil {
+			if !strings.Contains(err.Error(), "Transaction has been aborted. Please retry.") &&
+				!strings.Contains(err.Error(), "Transaction is too old") {
+				_ = APILogger.LogError(
+					"msg", err.Error(),
+					"context", "create current page",
+					"url", currentPage.Url,
+					"txnUid", txnUid,
+				)
+				return
+			}
+			continue
+		}
 	}
 	if currentPage.Parent != nil {
 		var parentUid string
-		parentUid, err = store.FindOrCreateNode(&ctx, currentPage.Parent)
-		if err != nil {
-			APILogger.LogError(
-				"msg", err.Error(),
-				"context", "create parent page",
-				"url", currentPage.Parent.Url,
-				"uid", uid,
-			)
-			return
+		for parentUid == "" {
+			txn := store.NewTxn()
+			parentUid, err = store.FindOrCreateNode(&ctx, txn, currentPage.Parent)
+			if err != nil {
+				if !strings.Contains(err.Error(), "Transaction has been aborted. Please retry.") &&
+					!strings.Contains(err.Error(), "Transaction is too old") {
+					_ = APILogger.LogError(
+						"msg", err.Error(),
+						"context", "create parent page",
+						"url", currentPage.Parent.Url,
+						"txnUid", txnUid,
+					)
+					return
+				}
+				continue
+			}
 		}
-		err = store.CheckOrCreatePredicate(&ctx, parentUid, currentUid)
-		if err != nil {
-			APILogger.LogError(
-				"context", "create predicate",
-				"msg", err.Error(),
-				"parentUid", parentUid,
-				"childUid", currentUid,
-				"uid", uid,
-			)
-			if !strings.Contains(err.Error(), "Transaction has been aborted. Please retry.") &&
-				!strings.Contains(err.Error(), "Transaction is too old") {
-				return
+		attempts := 10
+		for attempts > 0 {
+			attempts--
+			txn := store.NewTxn()
+			success, err := store.CheckOrCreatePredicate(&ctx, txn, parentUid, currentUid)
+			if err != nil {
+				if !strings.Contains(err.Error(), "Transaction has been aborted. Please retry.") &&
+					!strings.Contains(err.Error(), "Transaction is too old") {
+					_ = APILogger.LogError(
+						"context", "create predicate",
+						"msg", err.Error(),
+						"parentUid", parentUid,
+						"childUid", currentUid,
+						"txnUid", txnUid,
+					)
+					break
+				}
+				continue
+			}
+			if success {
+				break
 			}
 		}
 	}
@@ -130,53 +153,50 @@ func (store *DbStore) FindNode(ctx *context.Context, txn *dgo.Txn, Url string, d
 		}`
 	resp, err := txn.QueryWithVars(*ctx, q, variables)
 	if err != nil {
-		fmt.Print(err)
 		return
 	}
 	currentPage, err = deserializePage(resp.Json)
 
 	if currentPage != nil {
 		if currentPage.MaxDepth() < depth {
-			return nil, nil
+			return nil, errors.New("Depth does not match dgraph result.")
 		}
 	}
 	return
 }
 
 // FindOrCreateNode function checks for page, creates if doesn't exist.
-func (store *DbStore) FindOrCreateNode(ctx *context.Context, currentPage *Page) (uid string, err error) {
-	for uid == "" {
-		var assigned *dapi.Assigned
-		var p []byte
-		var resultPage *Page
-		txn := store.NewTxn()
-		resultPage, err = store.FindNode(ctx, txn, currentPage.Url, 0)
+func (store *DbStore) FindOrCreateNode(ctx *context.Context, txn *dgo.Txn, currentPage *Page) (uid string, err error) {
+	var assigned *dapi.Assigned
+	var p []byte
+	var resultPage *Page
+	resultPage, err = store.FindNode(ctx, txn, currentPage.Url, 0)
+	if err != nil {
+		if !strings.Contains(err.Error(), "Depth does not match dgraph result.") {
+			return
+		}
+	} else if resultPage != nil {
+		uid = resultPage.Uid
+	}
+	if uid == "" {
+		p, err = serializePage(currentPage)
 		if err != nil {
 			return
-		} else if resultPage != nil {
-			uid = resultPage.Uid
 		}
-		if uid == "" {
-			p, err = serializePage(currentPage)
-			if err != nil {
-				return
-			}
-			mu := &dapi.Mutation{}
-			mu.SetJson = p
-			assigned, err = txn.Mutate(*ctx, mu)
-			if err != nil {
-				return
-			}
+		mu := &dapi.Mutation{}
+		mu.SetJson = p
+		assigned, err = txn.Mutate(*ctx, mu)
+		if err != nil {
+			return
 		}
-		err = txn.Commit(*ctx)
-		txn.Discard(*ctx)
-		if uid == "" && err == nil {
-			uid = assigned.Uids["blank-0"]
-		}
-		if uid != "" {
-			currentPage.Uid = uid
-		}
-
+	}
+	err = txn.Commit(*ctx)
+	txn.Discard(*ctx)
+	if uid == "" && err == nil {
+		uid = assigned.Uids["blank-0"]
+	}
+	if uid != "" {
+		currentPage.Uid = uid
 	}
 	return
 }
@@ -199,30 +219,24 @@ func (store *DbStore) CheckPredicate(ctx *context.Context, txn *dgo.Txn, parentU
 }
 
 // CheckOrCreatePredicate function checks for edge, creates if doesn't exist.
-func (store *DbStore) CheckOrCreatePredicate(ctx *context.Context, parentUid string, childUid string) (err error) {
-	attempts := 10
-	exists := false
-	for !exists && attempts > 0 {
-		attempts--
-		txn := store.NewTxn()
-		exists, err = store.CheckPredicate(ctx, txn, parentUid, childUid)
+func (store *DbStore) CheckOrCreatePredicate(ctx *context.Context, txn *dgo.Txn, parentUid string, childUid string) (exists bool, err error) {
+	exists, err = store.CheckPredicate(ctx, txn, parentUid, childUid)
+	if err != nil {
+		return
+	}
+	if !exists {
+		_, err = txn.Mutate(*ctx, &dapi.Mutation{
+			Set: []*dapi.NQuad{{
+				Subject:   parentUid,
+				Predicate: "links",
+				ObjectId:  childUid,
+			}}})
 		if err != nil {
+			txn.Discard(*ctx)
 			return
 		}
-		if !exists {
-			_, err = txn.Mutate(*ctx, &dapi.Mutation{
-				Set: []*dapi.NQuad{{
-					Subject:   parentUid,
-					Predicate: "links",
-					ObjectId:  childUid,
-				}}})
-			if err != nil && attempts <= 0 {
-				txn.Discard(*ctx)
-				return
-			}
-			txn.Commit(*ctx)
-			txn.Discard(*ctx)
-		}
+		txn.Commit(*ctx)
+		txn.Discard(*ctx)
 	}
 	return
 }
