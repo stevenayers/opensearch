@@ -68,7 +68,7 @@ func (s *StoreSuite) TestCheckPredicateBadTransaction() {
 	txn := s.store.NewTxn()
 	ctx := context.Background()
 	txn.Discard(ctx)
-	_, err := s.store.CheckPredicate(&ctx, txn, "fakeuid1", "fakeuid2" )
+	_, err := s.store.CheckPredicate(&ctx, txn, "fakeuid1", "fakeuid2")
 	assert.Equal(s.T(), true, err != nil)
 }
 
@@ -76,7 +76,7 @@ func (s *StoreSuite) TestCheckOrCreatePredicateBadTransaction() {
 	txn := s.store.NewTxn()
 	ctx := context.Background()
 	txn.Discard(ctx)
-	_, err := s.store.CheckOrCreatePredicate(&ctx, txn, "fakeuid1", "fakeuid2" )
+	_, err := s.store.CheckOrCreatePredicate(&ctx, txn, "parentUid", "parentUid")
 	assert.Equal(s.T(), true, err != nil)
 }
 
