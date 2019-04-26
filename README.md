@@ -2,11 +2,8 @@
 [![Build Status](https://travis-ci.org/stevenayers/clamber.svg?branch=master)](https://travis-ci.org/stevenayers/clamber)
 [![codecov.io Code Coverage](https://img.shields.io/codecov/c/github/stevenayers/clamber.svg)](https://codecov.io/github/stevenayers/clamber?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/stevenayers/clamber)](https://goreportcard.com/report/github.com/stevenayers/clamber)
-[![Release](https://img.shields.io/badge/release-v0.1--alpha-blue.svg)](https://github.com/stevenayers/clamber/releases/tag/v0.1-alpha)
+[![Release](https://img.shields.io/badge/release-v0.1--alpha-5272B4.svg)](https://github.com/stevenayers/clamber/releases/tag/v0.1-alpha)
 [![GoDoc](https://godoc.org/github.com/stevenayers/clamber?status.svg)](https://godoc.org/github.com/stevenayers/clamber)
-[![Dependencies](https://img.shields.io/badge/dependencies-reference-5272B4.svg)](https://godoc.org/github.com/stevenayers/clamber/service?imports)
-
-A distributed system designed to crawl the internet.
 
 Proposed tech stack:
 - Design as a monolith first, move to distributed where/when necessary.
@@ -25,7 +22,7 @@ Warning: Expect performance issues when running clamber and dgraph locally, avoi
     git clone git@github.com:stevenayers/clamber.git
     cd clamber
     dep ensure
-    go build clamber.go
+    go build cmd/clamber.go
     ```
 1. Run dgraph (if you don't have an existing instance already).
     ```bash
@@ -35,7 +32,7 @@ Warning: Expect performance issues when running clamber and dgraph locally, avoi
     ```
 1. Run clamber
     ```bash
-    ./clamber -config ./Config.toml
+    ./clamber -config cmd/Config.toml
     ```
 1. You're good to go.
     ```bash

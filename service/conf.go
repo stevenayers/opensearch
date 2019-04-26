@@ -50,7 +50,7 @@ var (
 
 // InitConfig loads config in from specified TOML file.
 func InitConfig() {
-	AppFlags.ConfigFile = flag.String("config", "../Config.toml", "Config file path")
+	AppFlags.ConfigFile = flag.String("config", "../cmd/Config.toml", "Config file path")
 	AppFlags.Port = flag.Int("port", 8002, "Port to listen on")
 	AppFlags.Verbose = flag.Bool("verbose", false, "Verbosity")
 	flag.Parse()

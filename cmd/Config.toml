@@ -6,5 +6,5 @@
 
 [general]
   max_goroutines = 0
-  port = 8002
+  port = 8888
   log_level = "debug"
