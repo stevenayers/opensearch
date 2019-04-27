@@ -2,7 +2,8 @@ package api_test
 
 import (
 	"fmt"
-	kitlog "github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log"
+	"github.com/stevenayers/clamber/api"
 	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/suite"
 	"os"
@@ -12,19 +13,24 @@ import (
 type (
 	StoreSuite struct {
 		suite.Suite
-		store service.DbStore
+		store   service.DbStore
+		crawler service.Crawler
+		logger  log.Logger
+		config  service.Config
 	}
 )
 
 func (s *StoreSuite) SetupSuite() {
-	service.InitFlags()
-	err := service.InitConfig()
+	var err error
+	api.InitFlags(&api.AppFlags)
+	*api.AppFlags.ConfigFile = "../test/Config.toml"
+	s.config, err = service.InitConfig(*api.AppFlags.ConfigFile)
 	if err != nil {
 		s.T().Fatal(err)
 	}
-	service.APILogger.InitJsonLogger(kitlog.NewSyncWriter(os.Stdout), service.AppConfig.General.LogLevel)
+	s.logger = api.InitJsonLogger(log.NewSyncWriter(os.Stdout), s.config.General.LogLevel)
 	s.store = service.DbStore{}
-	service.Connect(&s.store, service.AppConfig.Database)
+	s.store.Connect(s.config.Database)
 }
 
 func (s *StoreSuite) SetupTest() {

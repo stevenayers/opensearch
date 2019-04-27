@@ -1,9 +1,10 @@
-package service_test
+package api_test
 
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/stevenayers/clamber/service"
+	"github.com/go-kit/kit/log/level"
+	"github.com/stevenayers/clamber/api"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -19,10 +20,9 @@ type (
 
 func (s *StoreSuite) TestLogDebug() {
 	buf := new(bytes.Buffer)
-	testLogger := service.ApiLogger{}
 	var logOutput LogOutput
-	testLogger.InitJsonLogger(buf, "debug")
-	err := testLogger.LogDebug("msg", "test")
+	logger := api.InitJsonLogger(buf, "debug")
+	err := level.Debug(logger).Log("msg", "test")
 	if err != nil {
 		s.T().Fatal(err)
 	}
@@ -36,10 +36,9 @@ func (s *StoreSuite) TestLogDebug() {
 
 func (s *StoreSuite) TestLogInfo() {
 	buf := new(bytes.Buffer)
-	testLogger := service.ApiLogger{}
 	var logOutput LogOutput
-	testLogger.InitJsonLogger(buf, "info")
-	err := testLogger.LogInfo("msg", "test")
+	logger := api.InitJsonLogger(buf, "info")
+	err := level.Info(logger).Log("msg", "test")
 	if err != nil {
 		s.T().Fatal(err)
 	}
@@ -53,10 +52,9 @@ func (s *StoreSuite) TestLogInfo() {
 
 func (s *StoreSuite) TestLogError() {
 	buf := new(bytes.Buffer)
-	testLogger := service.ApiLogger{}
 	var logOutput LogOutput
-	testLogger.InitJsonLogger(buf, "error")
-	err := testLogger.LogError("msg", "test")
+	logger := api.InitJsonLogger(buf, "error")
+	err := level.Error(logger).Log("msg", "test")
 	if err != nil {
 		s.T().Fatal(err)
 	}
@@ -70,9 +68,8 @@ func (s *StoreSuite) TestLogError() {
 
 func (s *StoreSuite) TestLogFilter() {
 	buf := new(bytes.Buffer)
-	testLogger := service.ApiLogger{}
-	testLogger.InitJsonLogger(buf, "defaultShouldGoToInfo")
-	err := testLogger.LogDebug("msg", "test")
+	logger := api.InitJsonLogger(buf, "defaultShouldGoToInfo")
+	err := level.Debug(logger).Log("msg", "test")
 	if err != nil {
 		s.T().Fatal(err)
 	}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/go-kit/kit/log/level"
 	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -16,6 +17,13 @@ type (
 	CrawlTest struct {
 		Url   string
 		Depth int
+	}
+	LogOutput struct {
+		Level   string `json:"level,omitempty"`
+		Node    string `json:"node,omitempty"`
+		Service string `json:"service,omitempty"`
+		Msg     string `json:"msg,omitempty"`
+		Context string `json:"context,omitempty"`
 	}
 )
 
@@ -46,7 +54,13 @@ var (
 
 func (s *StoreSuite) TestAlreadyCrawled() {
 	for _, test := range CrawlTests {
-		crawler := service.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
+		crawler := service.Crawler{
+			DbWaitGroup:    sync.WaitGroup{},
+			AlreadyCrawled: make(map[string]struct{}),
+			Logger:         s.logger,
+			Config:         s.config,
+			Db:             s.store,
+		}
 		rootPage := service.Page{Url: test.Url, Timestamp: time.Now().Unix()}
 		crawler.Crawl(&rootPage, test.Depth)
 		crawler.DbWaitGroup.Wait()
@@ -61,10 +75,15 @@ func (s *StoreSuite) TestAlreadyCrawled() {
 func (s *StoreSuite) TestCrawlBadUrl() {
 	for _, testUrl := range CrawlBadUrlTests {
 		buf := new(bytes.Buffer)
-		service.APILogger = service.ApiLogger{}
 		var logOutput LogOutput
-		service.APILogger.InitJsonLogger(buf, "debug")
-		crawler := service.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
+		logger := InitJsonLogger(buf, "debug")
+		crawler := service.Crawler{
+			DbWaitGroup:    sync.WaitGroup{},
+			AlreadyCrawled: make(map[string]struct{}),
+			Logger:         logger,
+			Config:         s.config,
+			Db:             s.store,
+		}
 		rootPage := service.Page{Url: testUrl, Timestamp: time.Now().Unix()}
 		crawler.Crawl(&rootPage, 0)
 		err := json.Unmarshal(buf.Bytes(), &logOutput)
@@ -79,10 +98,15 @@ func (s *StoreSuite) TestCrawlBadUrl() {
 func (s *StoreSuite) TestCrawlBadCreate() {
 	for _, testUrl := range CrawlBadCreateTests {
 		buf := new(bytes.Buffer)
-		service.APILogger = service.ApiLogger{}
 		var logOutput LogOutput
-		service.APILogger.InitJsonLogger(buf, "debug")
-		crawler := service.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
+		logger := InitJsonLogger(buf, "debug")
+		crawler := service.Crawler{
+			DbWaitGroup:    sync.WaitGroup{},
+			AlreadyCrawled: make(map[string]struct{}),
+			Logger:         logger,
+			Config:         s.config,
+			Db:             s.store,
+		}
 		rootPage := service.Page{Url: testUrl, Timestamp: time.Now().Unix()}
 		_ = s.store.DeleteAll()
 		crawler.Crawl(&rootPage, 0)
@@ -99,13 +123,19 @@ func (s *StoreSuite) TestCrawlBadCreate() {
 
 func (s *StoreSuite) TestAllPagesReturned() {
 	for _, testUrl := range PageReturnTests {
-		crawler := service.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
+		crawler := service.Crawler{
+			DbWaitGroup:    sync.WaitGroup{},
+			AlreadyCrawled: make(map[string]struct{}),
+			Logger:         s.logger,
+			Config:         s.config,
+			Db:             s.store,
+		}
 		rootPage := service.Page{Url: testUrl, Timestamp: time.Now().Unix()}
 		resp, err := http.Get(rootPage.Url)
 		var Urls []*service.Page
 		if err != nil {
-			_ = service.APILogger.LogDebug("context", "failed to get URL", "url", rootPage.Url, "msg", err.Error())
-			Urls, _ = rootPage.FetchChildPages(resp)
+			_ = level.Error(s.logger).Log("context", "failed to get URL", "url", rootPage.Url, "msg", err.Error())
+			Urls, _ = rootPage.FetchChildPages(resp, s.logger)
 			crawler.Crawl(&rootPage, 1)
 			crawler.DbWaitGroup.Wait()
 			assert.Equal(s.T(), len(Urls), len(rootPage.Links), "page.Links and fetch Urls length expected to match.")

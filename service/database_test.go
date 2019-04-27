@@ -33,7 +33,7 @@ func (s *StoreSuite) TestBadConnectionsSetSchema() {
 				Port: 999999},
 		},
 	}
-	service.Connect(&db, dbConfig)
+	db.Connect(dbConfig)
 	err := db.SetSchema()
 	assert.Equal(s.T(), true, err != nil)
 	if err != nil {
@@ -86,7 +86,13 @@ func (s *StoreSuite) TestCreateAndCheckPredicate() {
 			Url:       test.Url,
 			Timestamp: time.Now().Unix(),
 		}
-		crawler := service.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
+		crawler := service.Crawler{
+			DbWaitGroup:    sync.WaitGroup{},
+			AlreadyCrawled: make(map[string]struct{}),
+			Logger:         s.logger,
+			Config:         s.config,
+			Db:             s.store,
+		}
 		crawler.Crawl(&expectedPage, 1)
 		crawler.DbWaitGroup.Wait()
 		time.Sleep(2 * time.Second)
@@ -106,7 +112,13 @@ func (s *StoreSuite) TestCreateAndFindNode() {
 			Url:       test.Url,
 			Timestamp: time.Now().Unix(),
 		}
-		crawler := service.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
+		crawler := service.Crawler{
+			DbWaitGroup:    sync.WaitGroup{},
+			AlreadyCrawled: make(map[string]struct{}),
+			Logger:         s.logger,
+			Config:         s.config,
+			Db:             s.store,
+		}
 		crawler.Crawl(&expectedPage, test.Depth)
 		crawler.DbWaitGroup.Wait()
 		ctx := context.Background()
@@ -128,10 +140,12 @@ func (s *StoreSuite) TestCreateError() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	err = s.store.Create(&p)
+	s.crawler.Db = s.store
+	s.crawler.Logger = s.logger
+	err = s.crawler.Create(&p)
 	assert.Equal(s.T(), true, err != nil)
 	c := service.Page{Parent: &p}
-	err = s.store.Create(&c)
+	err = s.crawler.Create(&c)
 	assert.Equal(s.T(), true, err != nil)
 }
 

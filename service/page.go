@@ -3,6 +3,8 @@ package service
 import (
 	"encoding/json"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"net/http"
 	"net/url"
 	"path"
@@ -39,10 +41,10 @@ type (
 )
 
 // FetchChildPages function converts http response into child page objects
-func (page *Page) FetchChildPages(resp *http.Response) (childPages []*Page, err error) {
+func (page *Page) FetchChildPages(resp *http.Response, logger log.Logger) (childPages []*Page, err error) {
 	doc, err := goquery.NewDocumentFromResponse(resp)
 	if err != nil {
-		APILogger.LogDebug("context", "failed to parse HTML", "url", page.Url, "msg", err.Error())
+		_ = level.Error(logger).Log("context", "failed to parse HTML", "url", page.Url, "msg", err.Error())
 		return
 	}
 	defer resp.Body.Close()

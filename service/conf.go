@@ -1,7 +1,6 @@
 package service
 
 import (
-	"flag"
 	"github.com/BurntSushi/toml"
 	"io/ioutil"
 	"log"
@@ -20,6 +19,7 @@ type (
 		MaxGoroutines int `toml:"max_goroutines"`
 		Port          int
 		LogLevel      string `toml:"log_level"`
+		HttpTimeout   int    `toml:"http_timeout_seconds"`
 	}
 
 	// DatabaseConfig holds database section of toml config
@@ -32,40 +32,18 @@ type (
 		Host string
 		Port int
 	}
-
-	// Flags holds the app Flags
-	Flags struct {
-		ConfigFile *string
-		Port       *int
-		Verbose    *bool
-	}
 )
-
-var (
-	// AppFlags makes a global Flag struct
-	AppFlags Flags
-	// AppConfig makes a global Config struct
-	AppConfig Config
-)
-
-// InitFlags loads flags into global var AppFlags
-func InitFlags() {
-	AppFlags.ConfigFile = flag.String("config", "../cmd/Config.toml", "Config file path")
-	AppFlags.Port = flag.Int("port", 8002, "Port to listen on")
-	AppFlags.Verbose = flag.Bool("verbose", false, "Verbosity")
-	flag.Parse()
-}
 
 // InitConfig loads config in from specified TOML file.
-func InitConfig() (err error) {
-	tomlData, err := ioutil.ReadFile(*AppFlags.ConfigFile)
+func InitConfig(path string) (appConfig Config, err error) {
+	tomlData, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Printf("Could not read config file: %s - %s", *AppFlags.ConfigFile, err.Error())
+		log.Printf("Could not read config file: %s - %s", path, err.Error())
 		return
 	}
-	_, err = toml.Decode(string(tomlData), &AppConfig)
+	_, err = toml.Decode(string(tomlData), &appConfig)
 	if err != nil {
-		log.Printf("Could not parse TOML config: %s - %s", *AppFlags.ConfigFile, err.Error())
+		log.Printf("Could not parse TOML config: %s - %s", path, err.Error())
 	}
 	return
 }

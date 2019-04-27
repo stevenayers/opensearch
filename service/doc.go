@@ -3,12 +3,15 @@ Package service provides the clamber crawling package.
 
 To initiate a crawl, create a Crawler with an empty sync.WaitGroup and struct map. DbWaitGroup is needed to ensure the
 clamber process does not exit before the crawler is done writing to the database. AlreadyCrawled keeps track of the
-URLs which have been crawled already in that crawl process.
+URLs which have been crawled already in that crawl process. The rest are self explanatory.
 
-	crawler = service.Crawler{
-		DbWaitGroup: sync.WaitGroup{},
-		AlreadyCrawled: make(map[string]struct{})
-	}
+		crawler := service.Crawler{
+			DbWaitGroup: sync.WaitGroup{},
+			AlreadyCrawled: make(map[string]struct{}),
+			Logger: log.Logger,
+			Config: service.Config,
+			Db: service.DbStore,
+		}
 
 Create a page object with the starting URL of your crawl.
 

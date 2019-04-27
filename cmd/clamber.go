@@ -2,29 +2,36 @@ package main
 
 import (
 	"fmt"
-	kitlog "github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/stevenayers/clamber/api"
 	"github.com/stevenayers/clamber/service"
-	"log"
+	stdlog "log"
 	"net/http"
 	"os"
 )
 
 func main() {
-	service.InitFlags()
-	err := service.InitConfig()
+	api.InitFlags(&api.AppFlags)
+	appConfig, err := service.InitConfig(*api.AppFlags.ConfigFile)
+	if *api.AppFlags.Port != 0 {
+		appConfig.General.Port = *api.AppFlags.Port
+	}
+	if *api.AppFlags.Verbose {
+		appConfig.General.LogLevel = "debug"
+	}
+	logger := api.InitJsonLogger(log.NewSyncWriter(os.Stdout), appConfig.General.LogLevel)
 	if err != nil {
-		log.Fatal(err)
+		stdlog.Fatal(err.Error())
 		return
 	}
-	service.APILogger.InitJsonLogger(kitlog.NewSyncWriter(os.Stdout), service.AppConfig.General.LogLevel)
 	router := api.NewRouter()
-	service.APILogger.LogInfo(
-		"port", service.AppConfig.General.Port,
+	_ = level.Info(logger).Log(
+		"port", appConfig.General.Port,
 		"msg", "clamber api started listening",
 	)
-	err = http.ListenAndServe(fmt.Sprintf(":%d", service.AppConfig.General.Port), router)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", appConfig.General.Port), router)
 	if err != nil {
-		log.Fatal(err)
+		_ = level.Error(logger).Log("msg", err.Error())
 	}
 }

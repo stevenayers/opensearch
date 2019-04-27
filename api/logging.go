@@ -2,9 +2,12 @@ package api
 
 import (
 	"fmt"
+	"github.com/go-kit/kit/log"
+	"github.com/go-kit/kit/log/level"
 	"github.com/google/uuid"
-	"github.com/stevenayers/clamber/service"
+	"io"
 	"net/http"
+	"os"
 	"time"
 )
 
@@ -33,9 +36,10 @@ func HttpResponseLogger(handler http.Handler) http.Handler {
 		start := time.Now()
 		requestUid := uuid.New()
 		r.Header.Add("Clamber-Request-ID", requestUid.String())
+		logger := InitJsonLogger(log.NewSyncWriter(os.Stdout), "info")
 		rw := NewRichResponseWriter(w)
 		handler.ServeHTTP(rw, r)
-		service.APILogger.LogInfo(
+		_ = level.Info(logger).Log(
 			"uid", requestUid.String(),
 			"uri", r.URL.Path+"?"+r.URL.RawQuery,
 			"StatusCode", rw.StatusCode,
@@ -43,4 +47,25 @@ func HttpResponseLogger(handler http.Handler) http.Handler {
 			"duration", fmt.Sprintf("%s", time.Since(start)),
 		)
 	})
+}
+
+// InitJsonLogger function initiates a structured JSON logger, taking in the specified log level for what is displayed at runtime.
+func InitJsonLogger(writer io.Writer, logLevel string) (logger log.Logger) {
+	logger = log.NewJSONLogger(writer)
+	logger = log.With(
+		logger,
+		"service", "clamber-api",
+		"node", uuid.New().String(),
+	)
+	switch logLevel {
+	case "debug":
+		logger = level.NewFilter(logger, level.AllowDebug())
+	case "info":
+		logger = level.NewFilter(logger, level.AllowInfo())
+	case "error":
+		logger = level.NewFilter(logger, level.AllowError())
+	default:
+		logger = level.NewFilter(logger, level.AllowInfo())
+	}
+	return
 }

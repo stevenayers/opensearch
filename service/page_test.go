@@ -1,6 +1,7 @@
 package service_test
 
 import (
+	"github.com/go-kit/kit/log/level"
 	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -55,7 +56,7 @@ func (s *StoreSuite) TestFetchUrlsHttpError() {
 		thisPage := service.Page{Url: test.Url}
 		_, err := http.Get(thisPage.Url)
 		if err != nil {
-			service.APILogger.LogDebug("context", "failed to get URL", "url", thisPage.Url, "msg", err.Error())
+			_ = level.Error(s.logger).Log("context", "failed to get URL", "url", thisPage.Url, "msg", err.Error())
 		}
 		assert.Equal(s.T(), test.httpError, err != nil)
 	}
@@ -68,14 +69,14 @@ func (s *StoreSuite) TestFetchUrlsHttpError() {
 func (s *StoreSuite) TestParseHtml() {
 	testUrl := "https://golang.org"
 	p := service.Page{Url: testUrl}
-	_, err := p.FetchChildPages(nil)
+	_, err := p.FetchChildPages(nil, s.logger)
 	assert.Equal(s.T(), true, err != nil, "nil")
 	p = service.Page{Url: testUrl}
 	resp, err := http.Get(testUrl)
 	if err != nil {
 		s.T().Fatal(err)
 	}
-	_, err = p.FetchChildPages(resp)
+	_, err = p.FetchChildPages(resp, s.logger)
 	assert.Equal(s.T(), false, err != nil, testUrl)
 
 }

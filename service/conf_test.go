@@ -7,8 +7,8 @@ import (
 )
 
 func (s *StoreSuite) TestConfigPath() {
-	*service.AppFlags.ConfigFile = "../test/incorrectpath.toml"
-	err := service.InitConfig()
+	configFile := "../test/incorrectpath.toml"
+	_, err := service.InitConfig(configFile)
 	assert.Equal(s.T(), true, err != nil)
 	if err != nil {
 		assert.Equal(s.T(), true, strings.Contains(
@@ -17,8 +17,8 @@ func (s *StoreSuite) TestConfigPath() {
 }
 
 func (s *StoreSuite) TestConfigParse() {
-	*service.AppFlags.ConfigFile = "../test/badconfig.toml"
-	err := service.InitConfig()
+	configFile := "../test/badconfig.toml"
+	_, err := service.InitConfig(configFile)
 	assert.Equal(s.T(), true, err != nil)
 	if err != nil {
 		assert.Equal(s.T(), true, strings.Contains(
