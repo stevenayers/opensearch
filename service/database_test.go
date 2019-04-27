@@ -155,7 +155,7 @@ func (s *StoreSuite) TestDeserializePredicateDoesntExist() {
 	if err != nil {
 		s.T().Fatal(err)
 	}
-	assert.Equal(s.T(), false, exists)
+	assert.Equal(s.T(), false, exists && err == nil, err.Error())
 }
 
 func (s *StoreSuite) TestDeserializePredicateError() {

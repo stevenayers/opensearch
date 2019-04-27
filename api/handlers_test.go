@@ -35,6 +35,22 @@ func (s *StoreSuite) TestSearchHandler() {
 	}
 }
 
+func (s *StoreSuite) TestSearchHandlerConfigError() {
+	*api.AppFlags.ConfigFile = "../test/incorrectpath.toml"
+	for _, test := range QueryParamsTests {
+		req, _ := http.NewRequest("GET", "/search", nil)
+		q := req.URL.Query()
+		q.Add("url", test.Url)
+		q.Add("depth", strconv.Itoa(test.Depth))
+		req.URL.RawQuery = q.Encode()
+		response := httptest.NewRecorder()
+		router := api.NewRouter()
+		router.ServeHTTP(response, req)
+		assert.Equal(s.T(), 503, response.Code, "Service Unavailable response is expected")
+		api.ApiCrawler.DbWaitGroup.Wait()
+	}
+}
+
 func (s *StoreSuite) TestSearchHandlerBadUrl() {
 	req, _ := http.NewRequest("GET", "/search", nil)
 	q := req.URL.Query()

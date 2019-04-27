@@ -7,7 +7,6 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/gorilla/mux"
 	"github.com/stevenayers/clamber/service"
-	stdlog "log"
 	"net/http"
 	"net/url"
 	"os"
@@ -34,10 +33,12 @@ var ApiCrawler service.Crawler
 func SearchHandler(w http.ResponseWriter, r *http.Request) {
 	appConfig, err := service.InitConfig(*AppFlags.ConfigFile)
 	logger := InitJsonLogger(log.NewSyncWriter(os.Stdout), appConfig.General.LogLevel)
-	if err != nil {
-
-	}
 	statusCode := http.StatusOK
+	if err != nil {
+		statusCode = http.StatusServiceUnavailable
+		w.WriteHeader(statusCode)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	vars := mux.Vars(r)
 	depth, err := strconv.Atoi(vars["depth"])
@@ -57,13 +58,6 @@ func SearchHandler(w http.ResponseWriter, r *http.Request) {
 	store.Connect(appConfig.Database)
 	ctx := context.Background()
 	txn := store.NewTxn()
-
-	if err != nil {
-		statusCode = http.StatusServiceUnavailable
-		w.WriteHeader(statusCode)
-		stdlog.Fatal(err.Error())
-		return
-	}
 	result, err := store.FindNode(&ctx, txn, query.Url, query.Depth)
 	if err != nil {
 		if !strings.Contains(err.Error(), "Depth does not match dgraph result.") {

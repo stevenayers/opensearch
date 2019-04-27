@@ -178,9 +178,8 @@ func DeserializePredicate(pb []byte) (exists bool, err error) {
 	edges := jsonMap["edges"]
 	if len(edges) > 0 {
 		exists = edges[0].Matching > 0
-	} else {
-		exists = false
 	}
+
 	return
 }
 
