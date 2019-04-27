@@ -13,11 +13,12 @@ type QueryParamsTest struct {
 	Url                string
 	Depth              int
 	AllowExternalLinks bool
+	DisplayDepth       int
 }
 
 var QueryParamsTests = []QueryParamsTest{
-	{"https://golang.org", 1, false},
-	{"https://golang.org", 2, false},
+	{"https://golang.org", 1, false, 10},
+	{"https://golang.org", 2, false, 10},
 }
 
 func (s *StoreSuite) TestSearchHandler() {
@@ -26,6 +27,7 @@ func (s *StoreSuite) TestSearchHandler() {
 		q := req.URL.Query()
 		q.Add("url", test.Url)
 		q.Add("depth", strconv.Itoa(test.Depth))
+		q.Add("display_depth", strconv.Itoa(test.DisplayDepth))
 		req.URL.RawQuery = q.Encode()
 		response := httptest.NewRecorder()
 		router := api.NewRouter()
@@ -42,6 +44,7 @@ func (s *StoreSuite) TestSearchHandlerConfigError() {
 		q := req.URL.Query()
 		q.Add("url", test.Url)
 		q.Add("depth", strconv.Itoa(test.Depth))
+		q.Add("display_depth", strconv.Itoa(test.DisplayDepth))
 		req.URL.RawQuery = q.Encode()
 		response := httptest.NewRecorder()
 		router := api.NewRouter()
@@ -82,6 +85,7 @@ func (s *StoreSuite) TestSearchHandlerNotFound() {
 	q := req.URL.Query()
 	q.Add("url", "http://blsdadadadadsa.uk")
 	q.Add("depth", strconv.Itoa(2))
+	q.Add("display_depth", strconv.Itoa(2))
 	req.URL.RawQuery = q.Encode()
 	response := httptest.NewRecorder()
 	router := api.NewRouter()

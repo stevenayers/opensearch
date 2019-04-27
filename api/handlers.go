@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/gorilla/mux"
+	"github.com/google/uuid"
 	"github.com/stevenayers/clamber/service"
 	"net/http"
 	"net/url"
@@ -19,10 +19,11 @@ import (
 type (
 	// Query contains queried URL, depth and the resulting page data
 	Query struct {
-		Url        string        `json:"url"`
-		Depth      int           `json:"depth"`
-		StatusCode int           `json:"statusCode"`
-		Results    *service.Page `json:"results"`
+		Url          string        `json:"url"`
+		Depth        int           `json:"depth"`
+		DisplayDepth int           `json:"display_depth"`
+		StatusCode   int           `json:"statusCode"`
+		Results      *service.Page `json:"results"`
 	}
 )
 
@@ -31,6 +32,7 @@ var ApiCrawler service.Crawler
 // SearchHandler function handles /search endpoint. Initiates a database connection, tries to find the url in the database with the
 // required depth, and if it doesn't exist, initiate a crawl.
 func SearchHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	appConfig, err := service.InitConfig(*AppFlags.ConfigFile)
 	logger := InitJsonLogger(log.NewSyncWriter(os.Stdout), appConfig.General.LogLevel)
 	statusCode := http.StatusOK
@@ -39,21 +41,12 @@ func SearchHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(statusCode)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	vars := mux.Vars(r)
-	depth, err := strconv.Atoi(vars["depth"])
+	query, err := parseQuery(r)
 	if err != nil {
 		statusCode = http.StatusBadRequest
 		w.WriteHeader(statusCode)
 		return
 	}
-	_, err = url.Parse(vars["url"])
-	if err != nil {
-		statusCode = http.StatusBadRequest
-		w.WriteHeader(statusCode)
-		return
-	}
-	query := Query{Url: vars["url"], Depth: depth}
 	store := service.DbStore{}
 	store.Connect(appConfig.Database)
 	ctx := context.Background()
@@ -69,29 +62,38 @@ func SearchHandler(w http.ResponseWriter, r *http.Request) {
 	if result == nil {
 		start := time.Now()
 		ApiCrawler = service.Crawler{
-			DbWaitGroup:    sync.WaitGroup{},
-			AlreadyCrawled: make(map[string]struct{}),
-			Db:             store,
-			Config:         appConfig,
-			Logger:         logger,
+			DbWaitGroup:          sync.WaitGroup{},
+			AlreadyCrawled:       make(map[string]struct{}),
+			Db:                   store,
+			StartUrl:             query.Url,
+			Config:               appConfig,
+			Logger:               logger,
+			CrawlUid:             uuid.New(),
+			BackgroundCrawlDepth: calculateBackgroundDepth(query.Depth, query.DisplayDepth),
 		}
 		_ = level.Info(logger).Log(
-			"uid", r.Header.Get("Clamber-Request-ID"),
+			"requestUid", r.Header.Get("Clamber-Request-ID"),
 			"url", query.Url,
 			"depth", query.Depth,
+			"context", "Crawl",
+			"crawlUid", ApiCrawler.CrawlUid,
+			"backgroundDepth", ApiCrawler.BackgroundCrawlDepth,
 			"msg", "initiating search",
 		)
-		result = &service.Page{Url: query.Url}
-		ApiCrawler.Crawl(result, query.Depth)
+		result = &service.Page{Url: query.Url, Depth: query.DisplayDepth}
+		ApiCrawler.Crawl(result)
 
 		go func() {
 			ApiCrawler.DbWaitGroup.Wait()
 			_ = level.Info(logger).Log(
-				"uid", r.Header.Get("Clamber-Request-ID"),
+				"requestUid", r.Header.Get("Clamber-Request-ID"),
 				"url", query.Url,
 				"depth", query.Depth,
+				"context", "Crawl",
 				"duration", time.Since(start),
-				"msg", "finished writing result to dgraph",
+				"crawlUid", ApiCrawler.CrawlUid,
+				"backgroundDepth", ApiCrawler.BackgroundCrawlDepth,
+				"msg", "finished writing displayed result to dgraph",
 			)
 		}()
 	}
@@ -103,4 +105,44 @@ func SearchHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	query.StatusCode = statusCode
 	json.NewEncoder(w).Encode(query)
+}
+
+func calculateBackgroundDepth(depth int, displayDepth int) (backgroundCrawlDepth int) {
+	if depth == -1 {
+		backgroundCrawlDepth = -1
+	} else if (depth - displayDepth) <= 0 {
+		backgroundCrawlDepth = 0
+	} else {
+		backgroundCrawlDepth = depth - displayDepth
+	}
+	return
+}
+
+func parseQuery(r *http.Request) (query Query, err error) {
+	var start *url.URL
+	var depth int
+	var displayDepth int
+	start, err = url.Parse(r.URL.Query().Get("url"))
+	if err != nil {
+		return
+	}
+	depth, err = strconv.Atoi(r.URL.Query().Get("depth"))
+	if err != nil {
+		return
+	}
+	if dDepth := r.URL.Query().Get("display_depth"); dDepth != "" {
+		displayDepth, err = strconv.Atoi(dDepth)
+		if err != nil {
+			return
+		} else if displayDepth == 0 {
+			displayDepth = 10
+		}
+	} else {
+		displayDepth = 10
+	}
+	if displayDepth > depth {
+		displayDepth = depth
+	}
+	query = Query{Url: start.String(), Depth: depth, DisplayDepth: displayDepth}
+	return
 }

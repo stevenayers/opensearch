@@ -61,8 +61,8 @@ func (s *StoreSuite) TestAlreadyCrawled() {
 			Config:         s.config,
 			Db:             s.store,
 		}
-		rootPage := service.Page{Url: test.Url, Timestamp: time.Now().Unix()}
-		crawler.Crawl(&rootPage, test.Depth)
+		rootPage := service.Page{Url: test.Url, Timestamp: time.Now().Unix(), Depth: test.Depth}
+		crawler.Crawl(&rootPage)
 		crawler.DbWaitGroup.Wait()
 		for Url := range crawler.AlreadyCrawled { // Iterate through crawled AlreadyCrawled and recursively search for each one
 			var countedDepths []int
@@ -84,14 +84,14 @@ func (s *StoreSuite) TestCrawlBadUrl() {
 			Config:         s.config,
 			Db:             s.store,
 		}
-		rootPage := service.Page{Url: testUrl, Timestamp: time.Now().Unix()}
-		crawler.Crawl(&rootPage, 0)
+		rootPage := service.Page{Url: testUrl, Timestamp: time.Now().Unix(), Depth: 0}
+		crawler.Crawl(&rootPage)
 		err := json.Unmarshal(buf.Bytes(), &logOutput)
 		if err != nil {
 			s.T().Fatal(err.Error())
 		}
 		assert.Equal(s.T(), "error", logOutput.Level)
-		assert.Equal(s.T(), "failed to get URL", logOutput.Context)
+		assert.Equal(s.T(), "HTTP failure", logOutput.Context)
 	}
 }
 
@@ -107,9 +107,9 @@ func (s *StoreSuite) TestCrawlBadCreate() {
 			Config:         s.config,
 			Db:             s.store,
 		}
-		rootPage := service.Page{Url: testUrl, Timestamp: time.Now().Unix()}
+		rootPage := service.Page{Url: testUrl, Timestamp: time.Now().Unix(), Depth: 0}
 		_ = s.store.DeleteAll()
-		crawler.Crawl(&rootPage, 0)
+		crawler.Crawl(&rootPage)
 		crawler.DbWaitGroup.Wait()
 		err := json.Unmarshal(buf.Bytes(), &logOutput)
 		if err != nil {
@@ -130,13 +130,13 @@ func (s *StoreSuite) TestAllPagesReturned() {
 			Config:         s.config,
 			Db:             s.store,
 		}
-		rootPage := service.Page{Url: testUrl, Timestamp: time.Now().Unix()}
+		rootPage := service.Page{Url: testUrl, Timestamp: time.Now().Unix(), Depth: 1}
 		resp, err := http.Get(rootPage.Url)
 		var Urls []*service.Page
 		if err != nil {
 			_ = level.Error(s.logger).Log("context", "failed to get URL", "url", rootPage.Url, "msg", err.Error())
 			Urls, _ = rootPage.FetchChildPages(resp, s.logger)
-			crawler.Crawl(&rootPage, 1)
+			crawler.Crawl(&rootPage)
 			crawler.DbWaitGroup.Wait()
 			assert.Equal(s.T(), len(Urls), len(rootPage.Links), "page.Links and fetch Urls length expected to match.")
 		}

@@ -85,6 +85,7 @@ func (s *StoreSuite) TestCreateAndCheckPredicate() {
 		expectedPage := service.Page{
 			Url:       test.Url,
 			Timestamp: time.Now().Unix(),
+			Depth:     1,
 		}
 		crawler := service.Crawler{
 			DbWaitGroup:    sync.WaitGroup{},
@@ -93,12 +94,11 @@ func (s *StoreSuite) TestCreateAndCheckPredicate() {
 			Config:         s.config,
 			Db:             s.store,
 		}
-		crawler.Crawl(&expectedPage, 1)
+		crawler.Crawl(&expectedPage)
 		crawler.DbWaitGroup.Wait()
-		time.Sleep(2 * time.Second)
 		ctx := context.Background()
 		txn := s.store.NewTxn()
-		exists, err := s.store.CheckPredicate(&ctx, txn, expectedPage.Uid, expectedPage.Links[0].Uid)
+		exists, err := s.store.CheckPredicate(&ctx, txn, expectedPage.Uid, expectedPage.Links[2].Uid)
 		if err != nil {
 			s.T().Fatal(err)
 		}
@@ -111,6 +111,7 @@ func (s *StoreSuite) TestCreateAndFindNode() {
 		expectedPage := service.Page{
 			Url:       test.Url,
 			Timestamp: time.Now().Unix(),
+			Depth:     test.Depth,
 		}
 		crawler := service.Crawler{
 			DbWaitGroup:    sync.WaitGroup{},
@@ -119,7 +120,7 @@ func (s *StoreSuite) TestCreateAndFindNode() {
 			Config:         s.config,
 			Db:             s.store,
 		}
-		crawler.Crawl(&expectedPage, test.Depth)
+		crawler.Crawl(&expectedPage)
 		crawler.DbWaitGroup.Wait()
 		ctx := context.Background()
 		txn := s.store.NewTxn()

@@ -16,10 +16,11 @@ type (
 
 	// GeneralConfig holds general section of toml config
 	GeneralConfig struct {
-		MaxGoroutines int `toml:"max_goroutines"`
-		Port          int
-		LogLevel      string `toml:"log_level"`
-		HttpTimeout   int    `toml:"http_timeout_seconds"`
+		MaxGoroutines       int `toml:"max_goroutines"`
+		Port                int
+		LogLevel            string `toml:"log_level"`
+		HttpRetryAttempts   int    `toml:"http_retry_attempts"`
+		HttpBackOffDuration int    `toml:"http_back_off_duration"`
 	}
 
 	// DatabaseConfig holds database section of toml config

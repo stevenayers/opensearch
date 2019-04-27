@@ -40,7 +40,7 @@ func HttpResponseLogger(handler http.Handler) http.Handler {
 		rw := NewRichResponseWriter(w)
 		handler.ServeHTTP(rw, r)
 		_ = level.Info(logger).Log(
-			"uid", requestUid.String(),
+			"requestUid", requestUid.String(),
 			"uri", r.URL.Path+"?"+r.URL.RawQuery,
 			"StatusCode", rw.StatusCode,
 			"method", r.Method,
