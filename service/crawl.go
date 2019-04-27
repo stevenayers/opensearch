@@ -101,7 +101,6 @@ func (crawler *Crawler) Create(currentPage *Page) (err error) {
 					)
 					return
 				}
-				continue
 			}
 		}
 	}
@@ -121,7 +120,6 @@ func (crawler *Crawler) Create(currentPage *Page) (err error) {
 					)
 					return
 				}
-				continue
 			}
 		}
 		attempts := 10
@@ -141,7 +139,6 @@ func (crawler *Crawler) Create(currentPage *Page) (err error) {
 					)
 					break
 				}
-				continue
 			}
 			if success {
 				break
