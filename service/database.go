@@ -181,10 +181,7 @@ func (store *DbStore) FindOrCreateNode(ctx *context.Context, txn *dgo.Txn, curre
 		uid = resultPage.Uid
 	}
 	if uid == "" {
-		p, err = serializePage(currentPage)
-		if err != nil {
-			return
-		}
+		p, _ = serializePage(currentPage)
 		mu := &dapi.Mutation{}
 		mu.SetJson = p
 		assigned, err = txn.Mutate(*ctx, mu)
@@ -216,7 +213,7 @@ func (store *DbStore) CheckPredicate(ctx *context.Context, txn *dgo.Txn, parentU
 	if err != nil {
 		return
 	}
-	exists, err = deserializePredicate(resp.Json)
+	exists, err = DeserializePredicate(resp.Json)
 	return
 }
 

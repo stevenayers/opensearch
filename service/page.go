@@ -2,7 +2,6 @@ package service
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/PuerkitoBio/goquery"
 	"net/http"
 	"net/url"
@@ -152,10 +151,7 @@ func convertToJsonPage(currentPage *Page) (jsonPage JsonPage) {
 // Turns a Page into a JSON string
 func serializePage(currentPage *Page) (pb []byte, err error) {
 	p := convertToJsonPage(currentPage)
-	pb, err = json.Marshal(p)
-	if err != nil {
-		fmt.Print(err)
-	}
+	pb, _ = json.Marshal(p)
 	return
 }
 
@@ -171,7 +167,7 @@ func deserializePage(pb []byte) (currentPage *Page, err error) {
 }
 
 // Checks JSON dgraph edge result to see if edge exists
-func deserializePredicate(pb []byte) (exists bool, err error) {
+func DeserializePredicate(pb []byte) (exists bool, err error) {
 	jsonMap := make(map[string][]JsonPredicate)
 	err = json.Unmarshal(pb, &jsonMap)
 	if err != nil {

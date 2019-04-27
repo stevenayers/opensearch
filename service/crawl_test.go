@@ -2,9 +2,9 @@ package service_test
 
 import (
 	"bytes"
-	"github.com/stevenayers/clamber/service"
 	"encoding/json"
 	"fmt"
+	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"sync"
@@ -69,7 +69,7 @@ func (s *StoreSuite) TestCrawlBadUrl() {
 		crawler.Crawl(&rootPage, 0)
 		err := json.Unmarshal(buf.Bytes(), &logOutput)
 		if err != nil {
-			s.T().Fatal(err)
+			s.T().Fatal(err.Error())
 		}
 		assert.Equal(s.T(), "error", logOutput.Level)
 		assert.Equal(s.T(), "failed to get URL", logOutput.Context)

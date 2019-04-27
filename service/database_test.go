@@ -72,6 +72,14 @@ func (s *StoreSuite) TestCheckPredicateBadTransaction() {
 	assert.Equal(s.T(), true, err != nil)
 }
 
+func (s *StoreSuite) TestCheckOrCreatePredicateBadTransaction() {
+	txn := s.store.NewTxn()
+	ctx := context.Background()
+	txn.Discard(ctx)
+	_, err := s.store.CheckOrCreatePredicate(&ctx, txn, "fakeuid1", "fakeuid2")
+	assert.Equal(s.T(), true, err != nil)
+}
+
 func (s *StoreSuite) TestCreateAndCheckPredicate() {
 	for _, test := range NodeTests {
 		expectedPage := service.Page{
@@ -81,6 +89,7 @@ func (s *StoreSuite) TestCreateAndCheckPredicate() {
 		crawler := service.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
 		crawler.Crawl(&expectedPage, 1)
 		crawler.DbWaitGroup.Wait()
+		time.Sleep(2 * time.Second)
 		ctx := context.Background()
 		txn := s.store.NewTxn()
 		exists, err := s.store.CheckPredicate(&ctx, txn, expectedPage.Uid, expectedPage.Links[0].Uid)
@@ -123,5 +132,20 @@ func (s *StoreSuite) TestCreateError() {
 	assert.Equal(s.T(), true, err != nil)
 	c := service.Page{Parent: &p}
 	err = s.store.Create(&c)
+	assert.Equal(s.T(), true, err != nil)
+}
+
+func (s *StoreSuite) TestDeserializePredicateDoesntExist() {
+	pb := []byte(`{"edges":[{"matching":0}]}`)
+	exists, err := service.DeserializePredicate(pb)
+	if err != nil {
+		s.T().Fatal(err)
+	}
+	assert.Equal(s.T(), false, exists)
+}
+
+func (s *StoreSuite) TestDeserializePredicateError() {
+	pb := []byte(`{"edges":[{"matching":"hello"}]}`)
+	_, err := service.DeserializePredicate(pb)
 	assert.Equal(s.T(), true, err != nil)
 }
