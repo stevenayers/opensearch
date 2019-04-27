@@ -34,7 +34,13 @@ func (s *StoreSuite) SetupSuite() {
 }
 
 func (s *StoreSuite) SetupTest() {
-	err := s.store.DeleteAll()
+	var err error
+	*api.AppFlags.ConfigFile = "../test/Config.toml"
+	s.config, err = service.InitConfig(*api.AppFlags.ConfigFile)
+	if err != nil {
+		s.T().Fatal(err)
+	}
+	err = s.store.DeleteAll()
 	if err != nil {
 		s.T().Fatal(err)
 	}
