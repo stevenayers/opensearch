@@ -76,21 +76,23 @@ func (store *DbStore) Create(currentPage *Page) (err error) {
 	txnUid := uuid.New().String()
 	ctx := context.Background()
 	var currentUid string
-	for currentUid == "" {
-		txn := store.NewTxn()
-		currentUid, err = store.FindOrCreateNode(&ctx, txn, currentPage)
-		if err != nil {
-			if !strings.Contains(err.Error(), "Transaction has been aborted. Please retry.") &&
-				!strings.Contains(err.Error(), "Transaction is too old") {
-				_ = APILogger.LogError(
-					"msg", err.Error(),
-					"context", "create current page",
-					"url", currentPage.Url,
-					"txnUid", txnUid,
-				)
-				return
+	if currentPage.Url != "" {
+		for currentUid == "" {
+			txn := store.NewTxn()
+			currentUid, err = store.FindOrCreateNode(&ctx, txn, currentPage)
+			if err != nil {
+				if !strings.Contains(err.Error(), "Transaction has been aborted. Please retry.") &&
+					!strings.Contains(err.Error(), "Transaction is too old") {
+					_ = APILogger.LogError(
+						"msg", err.Error(),
+						"context", "create current page",
+						"url", currentPage.Url,
+						"txnUid", txnUid,
+					)
+					return
+				}
+				continue
 			}
-			continue
 		}
 	}
 	if currentPage.Parent != nil {

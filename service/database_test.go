@@ -72,14 +72,6 @@ func (s *StoreSuite) TestCheckPredicateBadTransaction() {
 	assert.Equal(s.T(), true, err != nil)
 }
 
-func (s *StoreSuite) TestCheckOrCreatePredicateBadTransaction() {
-	txn := s.store.NewTxn()
-	ctx := context.Background()
-	txn.Discard(ctx)
-	_, err := s.store.CheckOrCreatePredicate(&ctx, txn, "parentUid", "parentUid")
-	assert.Equal(s.T(), true, err != nil)
-}
-
 func (s *StoreSuite) TestCreateAndCheckPredicate() {
 	for _, test := range NodeTests {
 		expectedPage := service.Page{
@@ -128,5 +120,8 @@ func (s *StoreSuite) TestCreateError() {
 		log.Fatalln(err)
 	}
 	err = s.store.Create(&p)
+	assert.Equal(s.T(), true, err != nil)
+	c := service.Page{Parent: &p}
+	err = s.store.Create(&c)
 	assert.Equal(s.T(), true, err != nil)
 }

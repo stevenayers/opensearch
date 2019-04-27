@@ -41,17 +41,17 @@ type (
 
 // FetchChildPages function converts http response into child page objects
 func (page *Page) FetchChildPages(resp *http.Response) (childPages []*Page, err error) {
-	defer resp.Body.Close()
-	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	doc, err := goquery.NewDocumentFromResponse(resp)
 	if err != nil {
 		APILogger.LogDebug("context", "failed to parse HTML", "url", page.Url, "msg", err.Error())
 		return
 	}
+	defer resp.Body.Close()
 	localProcessed := make(map[string]struct{})
 	doc.Find("a").Each(func(index int, item *goquery.Selection) {
 		href, ok := item.Attr("href")
 		if ok && page.IsRelativeUrl(href) && page.IsRelativeHtml(href) && href != "" {
-			absoluteUrl := page.ParseRelativeUrl(href)
+			absoluteUrl, _ := page.ParseRelativeUrl(href)
 			_, isPresent := localProcessed[absoluteUrl.Path]
 			if !isPresent {
 				localProcessed[absoluteUrl.Path] = struct{}{}
@@ -80,14 +80,14 @@ func (page *Page) MaxDepth() (countDepth int) {
 }
 
 // ParseRelativeUrl function parses a relative URL string into a URL object
-func (page *Page) ParseRelativeUrl(relativeUrl string) (absoluteUrl *url.URL) {
+func (page *Page) ParseRelativeUrl(relativeUrl string) (absoluteUrl *url.URL, err error) {
 	parsedRootUrl, err := url.Parse(page.Url)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	absoluteUrl, err = url.Parse(parsedRootUrl.Scheme + "://" + parsedRootUrl.Host + path.Clean("/"+relativeUrl))
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	absoluteUrl.Fragment = "" // Removes '#' identifiers from Url
 	return

@@ -8,4 +8,4 @@
 [general]
   max_goroutines = 0
   port = 8888
-  log_level = "debug"
+  log_level = "info"

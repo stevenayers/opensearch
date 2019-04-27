@@ -21,6 +21,10 @@ func (crawler *Crawler) Crawl(currentPage *Page, depth int) {
 		_ = APILogger.LogError("context", "failed to get URL", "url", currentPage.Url, "msg", err.Error())
 		return
 	}
+	if resp.StatusCode != 200 {
+		_ = APILogger.LogDebug("context", "HTTP Failure", "url", currentPage.Url, "statusCode", resp.StatusCode)
+		return
+	}
 	crawler.DbWaitGroup.Add(1)
 	go func(currentPage *Page) {
 		defer crawler.DbWaitGroup.Done()

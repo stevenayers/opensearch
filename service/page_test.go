@@ -65,6 +65,21 @@ func (s *StoreSuite) TestFetchUrlsHttpError() {
 // on the page reflect the number of links returned.
 // Another test case is checking correct errors from parseHtml
 
+func (s *StoreSuite) TestParseHtml() {
+	testUrl := "https://golang.org"
+	p := service.Page{Url: testUrl}
+	_, err := p.FetchChildPages(nil)
+	assert.Equal(s.T(), true, err != nil, "nil")
+	p = service.Page{Url: testUrl}
+	resp, err := http.Get(testUrl)
+	if err != nil {
+		s.T().Fatal(err)
+	}
+	_, err = p.FetchChildPages(resp)
+	assert.Equal(s.T(), false, err != nil, testUrl)
+
+}
+
 func (s *StoreSuite) TestIsRelativeUrl() {
 	for _, test := range RelativeUrlTests {
 		p := &service.Page{}
@@ -76,7 +91,27 @@ func (s *StoreSuite) TestParseRelativeUrl() {
 	rootUrl := "http://example.edu"
 	for _, test := range ParseUrlTests {
 		p := &service.Page{Url: rootUrl}
-		absoluteUrl := p.ParseRelativeUrl(test.Url)
+		absoluteUrl, err := p.ParseRelativeUrl(test.Url)
+		if err != nil {
+			s.T().Fatal(err)
+		}
 		assert.Equal(s.T(), test.ExpectedUrl, absoluteUrl.String())
 	}
+}
+
+func (s *StoreSuite) TestParseRelativeRootError() {
+	rootUrl := "£$@£%"
+	for _, test := range ParseUrlTests {
+		p := &service.Page{Url: rootUrl}
+		_, err := p.ParseRelativeUrl(test.Url)
+		assert.Equal(s.T(), true, err != nil)
+	}
+}
+
+func (s *StoreSuite) TestParseRelativeError() {
+	rootUrl := "http://example.edu"
+	p := &service.Page{Url: rootUrl}
+	_, err := p.ParseRelativeUrl("@£$%@@%")
+	assert.Equal(s.T(), true, err != nil)
+
 }

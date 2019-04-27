@@ -36,6 +36,7 @@ func (s *StoreSuite) SetupTest() {
 	if err != nil {
 		s.T().Fatal(err)
 	}
+
 }
 
 func (s *StoreSuite) TearDownSuite() {

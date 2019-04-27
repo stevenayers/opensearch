@@ -3,13 +3,12 @@ package api
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
 	"github.com/stevenayers/clamber/service"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -23,6 +22,8 @@ type (
 	}
 )
 
+var ApiCrawler service.Crawler
+
 // SearchHandler function handles /search endpoint. Initiates a database connection, tries to find the url in the database with the
 // required depth, and if it doesn't exist, initiate a crawl.
 func SearchHandler(w http.ResponseWriter, r *http.Request) {
@@ -31,12 +32,12 @@ func SearchHandler(w http.ResponseWriter, r *http.Request) {
 	depth, err := strconv.Atoi(vars["depth"])
 	//allowExternalLinks, err := strconv.ParseBool(vars["allow_external_links"])
 	if err != nil {
-		panic(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 	_, err = url.Parse(vars["url"])
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		log.Fatal(err.Error())
 		return
 	}
 	query := Query{Url: vars["url"], Depth: depth}
@@ -46,23 +47,24 @@ func SearchHandler(w http.ResponseWriter, r *http.Request) {
 	txn := store.NewTxn()
 	result, err := service.DB.FindNode(&ctx, txn, query.Url, query.Depth)
 	if err != nil {
-		fmt.Print(err)
+		if !strings.Contains(err.Error(), "Depth does not match dgraph result.") {
+			return
+		}
 	}
-	var crawler service.Crawler
 	if result == nil {
 		start := time.Now()
-		service.APILogger.LogDebug(
+		_ = service.APILogger.LogDebug(
 			"uid", r.Header.Get("Clamber-Request-ID"),
 			"url", query.Url,
 			"depth", query.Depth,
 			"msg", "initiating search",
 		)
-		crawler = service.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
+		ApiCrawler = service.Crawler{DbWaitGroup: sync.WaitGroup{}, AlreadyCrawled: make(map[string]struct{})}
 		result = &service.Page{Url: query.Url}
-		crawler.Crawl(result, query.Depth)
+		ApiCrawler.Crawl(result, query.Depth)
 		go func() {
-			crawler.DbWaitGroup.Wait()
-			service.APILogger.LogDebug(
+			ApiCrawler.DbWaitGroup.Wait()
+			_ = service.APILogger.LogDebug(
 				"uid", r.Header.Get("Clamber-Request-ID"),
 				"url", query.Url,
 				"depth", query.Depth,
@@ -72,7 +74,7 @@ func SearchHandler(w http.ResponseWriter, r *http.Request) {
 		}()
 	}
 	query.Results = result
-	if query.Results == nil {
+	if query.Results.Links == nil {
 		w.WriteHeader(http.StatusNotFound)
 	}
 	json.NewEncoder(w).Encode(query)

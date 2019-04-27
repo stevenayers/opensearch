@@ -9,19 +9,22 @@ import (
 )
 
 type (
-	richResponseWriter struct {
+	// RichResponseWriter encapsulates status code and Response Writer
+	RichResponseWriter struct {
 		http.ResponseWriter
-		statusCode int
+		StatusCode int
 	}
 )
 
-func (w *richResponseWriter) WriteHeader(code int) {
-	w.statusCode = code
+// WriteHeader function Writers specified header to response
+func (w *RichResponseWriter) WriteHeader(code int) {
+	w.StatusCode = code
 	w.ResponseWriter.WriteHeader(code)
 }
 
-func newRichResponseWriter(w http.ResponseWriter) *richResponseWriter {
-	return &richResponseWriter{w, http.StatusOK}
+// NewRichResponseWriter function creates a new RichResponseWriter
+func NewRichResponseWriter(w http.ResponseWriter) *RichResponseWriter {
+	return &RichResponseWriter{w, http.StatusOK}
 }
 
 // HttpResponseLogger creates a custom logger which outputs HTTP response info as a json log to stdout.
@@ -30,12 +33,12 @@ func HttpResponseLogger(handler http.Handler) http.Handler {
 		start := time.Now()
 		requestUid := uuid.New()
 		r.Header.Add("Clamber-Request-ID", requestUid.String())
-		rw := newRichResponseWriter(w)
+		rw := NewRichResponseWriter(w)
 		handler.ServeHTTP(rw, r)
 		service.APILogger.LogInfo(
 			"uid", requestUid.String(),
 			"uri", r.URL.Path+"?"+r.URL.RawQuery,
-			"statusCode", rw.statusCode,
+			"StatusCode", rw.StatusCode,
 			"method", r.Method,
 			"duration", fmt.Sprintf("%s", time.Since(start)),
 		)
