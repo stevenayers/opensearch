@@ -1,11 +1,11 @@
 package service_test
 
 import (
+	"clamber/service"
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/uuid"
-	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/suite"
 	"io"
 	"os"

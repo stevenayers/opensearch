@@ -1,10 +1,10 @@
 package api_test
 
 import (
+	"clamber/api"
+	"clamber/service"
 	"fmt"
 	"github.com/go-kit/kit/log"
-	"github.com/stevenayers/clamber/api"
-	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/suite"
 	"os"
 	"testing"
@@ -30,13 +30,20 @@ func (s *StoreSuite) SetupSuite() {
 	}
 	s.logger = api.InitJsonLogger(log.NewSyncWriter(os.Stdout), s.config.General.LogLevel)
 	s.store = service.DbStore{}
-	s.store.Connect(s.config.Database)
+
 }
 
 func (s *StoreSuite) SetupTest() {
 	var err error
 	*api.AppFlags.ConfigFile = "../test/Config.toml"
 	s.config, err = service.InitConfig(*api.AppFlags.ConfigFile)
+	for _, conn := range s.store.Connection {
+		err := conn.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}
+	s.store.Connect(s.config.Database)
 	if err != nil {
 		s.T().Fatal(err)
 	}

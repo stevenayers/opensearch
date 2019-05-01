@@ -2,10 +2,10 @@ package service_test
 
 import (
 	"bytes"
+	"clamber/service"
 	"encoding/json"
 	"fmt"
 	"github.com/go-kit/kit/log/level"
-	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"sync"
@@ -29,9 +29,9 @@ type (
 
 var (
 	CrawlTests = []CrawlTest{
-		{"https://golang.org", 2},
-		{"https://youtube.com", 1},
-		{"https://google.com", 1},
+		//{"https://golang.org", 2},
+		//{"https://youtube.com", 1},
+		//{"https://google.com", 1},
 	}
 
 	PageReturnTests = []string{

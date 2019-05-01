@@ -1,8 +1,8 @@
 package service_test
 
 import (
+	"clamber/service"
 	"context"
-	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"strings"
@@ -22,6 +22,12 @@ var (
 		{"https://golang.org", 1},
 		{"https://google.com", 1},
 		{"https://youtube.com", 1},
+	}
+
+	NodeDepthTests = []NodeTest{
+		{"https://golang.org", 1},
+		{"https://golang.org", 2},
+		{"https://google.com", 2},
 	}
 )
 
@@ -107,7 +113,7 @@ func (s *StoreSuite) TestCreateAndCheckPredicate() {
 }
 
 func (s *StoreSuite) TestCreateAndFindNode() {
-	for _, test := range NodeTests {
+	for _, test := range NodeDepthTests {
 		expectedPage := service.Page{
 			Url:       test.Url,
 			Timestamp: time.Now().Unix(),

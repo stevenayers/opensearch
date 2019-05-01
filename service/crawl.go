@@ -144,10 +144,22 @@ func (crawler *Crawler) BackgroundCrawl(currentPage *Page) {
 		crawler.BgWaitNotified = true
 		go func() {
 			crawler.BgWaitGroup.Wait()
+			ctx := context.Background()
+			txn := crawler.Db.NewTxn()
+			resultDepth, err := crawler.Db.FindNodeDepth(&ctx, txn, crawler.StartUrl)
+			if err != nil {
+				_ = level.Error(crawler.Logger).Log(
+					"url", crawler.StartUrl,
+					"crawlUid", crawler.CrawlUid,
+					"context", "BackgroundCrawl",
+					"msg", "Could not find total depth crawled.",
+				)
+			}
 			_ = level.Info(crawler.Logger).Log(
 				"url", crawler.StartUrl,
 				"crawlUid", crawler.CrawlUid,
 				"context", "BackgroundCrawl",
+				"crawledDepth", resultDepth,
 				"msg", "Finished background Crawl",
 			)
 		}()

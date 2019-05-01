@@ -1,8 +1,8 @@
 package service_test
 
 import (
+	"clamber/service"
 	"github.com/go-kit/kit/log/level"
-	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 )

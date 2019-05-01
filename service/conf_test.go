@@ -1,7 +1,7 @@
 package service_test
 
 import (
-	"github.com/stevenayers/clamber/service"
+	"clamber/service"
 	"github.com/stretchr/testify/assert"
 	"strings"
 )

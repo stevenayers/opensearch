@@ -52,6 +52,7 @@ func HttpResponseLogger(handler http.Handler) http.Handler {
 // InitJsonLogger function initiates a structured JSON logger, taking in the specified log level for what is displayed at runtime.
 func InitJsonLogger(writer io.Writer, logLevel string) (logger log.Logger) {
 	logger = log.NewJSONLogger(writer)
+	logger = log.With(logger, "timestamp", log.DefaultTimestampUTC)
 	logger = log.With(
 		logger,
 		"service", "clamber-api",

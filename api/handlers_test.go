@@ -1,8 +1,8 @@
 package api_test
 
 import (
+	"clamber/api"
 	"github.com/gorilla/mux"
-	"github.com/stevenayers/clamber/api"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
@@ -33,7 +33,6 @@ func (s *StoreSuite) TestSearchHandler() {
 		router := api.NewRouter()
 		router.ServeHTTP(response, req)
 		assert.Equal(s.T(), 200, response.Code, "StatusOK response is expected")
-		api.ApiCrawler.DbWaitGroup.Wait()
 	}
 }
 
@@ -50,7 +49,6 @@ func (s *StoreSuite) TestSearchHandlerConfigError() {
 		router := api.NewRouter()
 		router.ServeHTTP(response, req)
 		assert.Equal(s.T(), 503, response.Code, "Service Unavailable response is expected")
-		api.ApiCrawler.DbWaitGroup.Wait()
 	}
 }
 
@@ -64,7 +62,7 @@ func (s *StoreSuite) TestSearchHandlerBadUrl() {
 	router := api.NewRouter()
 	router.ServeHTTP(response, req)
 	assert.Equal(s.T(), 400, response.Code, "BadRequest response is expected")
-	api.ApiCrawler.DbWaitGroup.Wait()
+	//api.ApiCrawler.DbWaitGroup.Wait()
 }
 
 func (s *StoreSuite) TestSearchHandlerBadDepth() {
@@ -77,7 +75,7 @@ func (s *StoreSuite) TestSearchHandlerBadDepth() {
 	router := api.NewRouter()
 	router.ServeHTTP(response, req)
 	assert.Equal(s.T(), 400, response.Code, "BadRequest response is expected")
-	api.ApiCrawler.DbWaitGroup.Wait()
+	//api.ApiCrawler.DbWaitGroup.Wait()
 }
 
 func (s *StoreSuite) TestSearchHandlerNotFound() {
@@ -91,7 +89,7 @@ func (s *StoreSuite) TestSearchHandlerNotFound() {
 	router := api.NewRouter()
 	router.ServeHTTP(response, req)
 	assert.Equal(s.T(), 404, response.Code, "BadRequest response is expected")
-	api.ApiCrawler.DbWaitGroup.Wait()
+	//api.ApiCrawler.DbWaitGroup.Wait()
 }
 
 func (s *StoreSuite) TestWriteHeader() {

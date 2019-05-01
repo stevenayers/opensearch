@@ -1,12 +1,12 @@
 package api
 
 import (
+	"clamber/service"
 	"context"
 	"encoding/json"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/uuid"
-	"github.com/stevenayers/clamber/service"
 	"net/http"
 	"net/url"
 	"os"
@@ -26,8 +26,6 @@ type (
 		Results      *service.Page `json:"results"`
 	}
 )
-
-var ApiCrawler service.Crawler
 
 // SearchHandler function handles /search endpoint. Initiates a database connection, tries to find the url in the database with the
 // required depth, and if it doesn't exist, initiate a crawl.
@@ -49,19 +47,22 @@ func SearchHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	store := service.DbStore{}
 	store.Connect(appConfig.Database)
-	ctx := context.Background()
-	txn := store.NewTxn()
-	result, err := store.FindNode(&ctx, txn, query.Url, query.Depth)
-	if err != nil {
-		if !strings.Contains(err.Error(), "Depth does not match dgraph result.") {
-			statusCode = http.StatusServiceUnavailable
-			w.WriteHeader(statusCode)
-			return
+	var result *service.Page
+	if query.Depth >= 0 {
+		ctx := context.Background()
+		txn := store.NewTxn()
+		result, err = store.FindNode(&ctx, txn, query.Url, query.Depth)
+		if err != nil {
+			if !strings.Contains(err.Error(), "Depth does not match dgraph result.") {
+				statusCode = http.StatusServiceUnavailable
+				w.WriteHeader(statusCode)
+				return
+			}
 		}
 	}
 	if result == nil {
 		start := time.Now()
-		ApiCrawler = service.Crawler{
+		crawler := &service.Crawler{
 			DbWaitGroup:          sync.WaitGroup{},
 			AlreadyCrawled:       make(map[string]struct{}),
 			Db:                   store,
@@ -76,23 +77,23 @@ func SearchHandler(w http.ResponseWriter, r *http.Request) {
 			"url", query.Url,
 			"depth", query.Depth,
 			"context", "Crawl",
-			"crawlUid", ApiCrawler.CrawlUid,
-			"backgroundDepth", ApiCrawler.BackgroundCrawlDepth,
+			"crawlUid", crawler.CrawlUid,
+			"backgroundDepth", crawler.BackgroundCrawlDepth,
 			"msg", "initiating search",
 		)
 		result = &service.Page{Url: query.Url, Depth: query.DisplayDepth}
-		ApiCrawler.Crawl(result)
+		crawler.Crawl(result)
 
 		go func() {
-			ApiCrawler.DbWaitGroup.Wait()
+			crawler.DbWaitGroup.Wait()
 			_ = level.Info(logger).Log(
 				"requestUid", r.Header.Get("Clamber-Request-ID"),
 				"url", query.Url,
 				"depth", query.Depth,
 				"context", "Crawl",
 				"duration", time.Since(start),
-				"crawlUid", ApiCrawler.CrawlUid,
-				"backgroundDepth", ApiCrawler.BackgroundCrawlDepth,
+				"crawlUid", crawler.CrawlUid,
+				"backgroundDepth", crawler.BackgroundCrawlDepth,
 				"msg", "finished writing displayed result to dgraph",
 			)
 		}()
@@ -140,7 +141,7 @@ func parseQuery(r *http.Request) (query Query, err error) {
 	} else {
 		displayDepth = 10
 	}
-	if displayDepth > depth {
+	if depth != -1 && displayDepth > depth {
 		displayDepth = depth
 	}
 	query = Query{Url: start.String(), Depth: depth, DisplayDepth: displayDepth}

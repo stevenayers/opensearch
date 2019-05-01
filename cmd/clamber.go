@@ -1,11 +1,11 @@
 package main
 
 import (
+	"clamber/api"
+	"clamber/service"
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/stevenayers/clamber/api"
-	"github.com/stevenayers/clamber/service"
 	stdlog "log"
 	"net/http"
 	"os"

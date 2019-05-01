@@ -2,9 +2,9 @@ package api_test
 
 import (
 	"bytes"
+	"clamber/api"
 	"encoding/json"
 	"github.com/go-kit/kit/log/level"
-	"github.com/stevenayers/clamber/api"
 	"github.com/stretchr/testify/assert"
 )
 
