@@ -49,7 +49,7 @@ Takes a URL, depth, allow_external_links, checks Page Database to see if we alre
 | Parameter            | Type   | Description |
 |----------------------|--------|-------------|
 | url                  | string | starting url for sitemap |
-| depth                | int    | 0 is infinite. If you specified 10, that would be your max depth to crawl. |
+| depth                | int    | If you specified 10, that would be your max depth to crawl. |
 | display_depth        | int    | how deep a depth to return in JSON (Not yet implemented) |
 | allow_external_links | bool   | whether to crawl external links or not (Not yet implemented) |
 
