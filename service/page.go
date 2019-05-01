@@ -23,6 +23,7 @@ type (
 		Url       string  `json:"url,omitempty"`
 		Links     []*Page `json:"links,omitempty"`
 		Parent    *Page   `json:"-"`
+		Depth     int     `json:"-"`
 		Timestamp int64   `json:"timestamp,omitempty"`
 	}
 

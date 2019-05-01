@@ -2,37 +2,75 @@ package service
 
 import (
 	"context"
+	"errors"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/uuid"
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 )
 
 // Crawler holds objects related to the crawler
 type Crawler struct {
 	AlreadyCrawled map[string]struct{}
 	sync.Mutex
-	DbWaitGroup sync.WaitGroup
-	Config      Config
-	Db          DbStore
-	Logger      log.Logger
+	DbWaitGroup          sync.WaitGroup
+	BgWaitGroup          sync.WaitGroup
+	BgNotified           bool
+	BgWaitNotified       bool
+	Config               Config
+	Db                   DbStore
+	Logger               log.Logger
+	BackgroundCrawlDepth int
+	CrawlUid             uuid.UUID
+	StartUrl             string
+}
+
+// Get function manages HTTP request for page
+func (crawler *Crawler) Get(currentPage *Page) (resp *http.Response, err error) {
+	var req *http.Request
+	maxAttempts := crawler.Config.General.HttpRetryAttempts + 1
+	backOffDuration := time.Duration(crawler.Config.General.HttpBackOffDuration) * time.Second
+	client := http.Client{}
+	req, err = http.NewRequest("GET", currentPage.Url, nil)
+	if err != nil {
+		_ = level.Error(crawler.Logger).Log("context", "HTTP failure", "url", currentPage.Url, "msg", err.Error())
+		return
+	}
+	req.Header.Set("User-Agent", "stevenayers/clamber")
+	count := 0
+	for maxAttempts > count {
+		count++
+		resp, err = client.Do(req)
+		if err != nil {
+			_ = level.Error(crawler.Logger).Log("context", "HTTP failure", "url", currentPage.Url, "msg", err.Error())
+			return
+		}
+		switch {
+		case resp.StatusCode == http.StatusOK:
+			break
+		case resp.StatusCode < 500:
+			err = errors.New("received bad HTTP status code")
+			_ = level.Debug(crawler.Logger).Log("context", "HTTP failure", "url", currentPage.Url, "statusCode", resp.StatusCode, "msg", err.Error())
+			break
+		default:
+			if maxAttempts == count {
+				err = errors.New("received bad HTTP status code")
+				_ = level.Debug(crawler.Logger).Log("context", "HTTP failure", "url", currentPage.Url, "statusCode", resp.StatusCode, "msg", err.Error())
+			}
+			time.Sleep(backOffDuration)
+		}
+	}
+	return
 }
 
 // Crawl function adds page to db (in a goroutine so it doesn't stop initiating other crawls), gets the child pages then
 // initiates crawls for each one.
-func (crawler *Crawler) Crawl(currentPage *Page, depth int) {
-	//client := http.Client{
-	//	Timeout: service.AppConfig.General.HttpTimeout,
-	//}
-	resp, err := http.Get(currentPage.Url)
+func (crawler *Crawler) Crawl(currentPage *Page) {
+	resp, err := crawler.Get(currentPage)
 	if err != nil {
-		_ = level.Error(crawler.Logger).Log("context", "failed to get URL", "url", currentPage.Url, "msg", err.Error())
-		return
-	}
-	if resp.StatusCode != 200 {
-		_ = level.Debug(crawler.Logger).Log("context", "HTTP Failure", "url", currentPage.Url, "statusCode", resp.StatusCode)
 		return
 	}
 	crawler.DbWaitGroup.Add(1)
@@ -43,7 +81,7 @@ func (crawler *Crawler) Crawl(currentPage *Page, depth int) {
 			return
 		}
 	}(currentPage)
-	if crawler.hasAlreadyCrawled(currentPage.Url) || depth <= 0 ||
+	if crawler.hasAlreadyCrawled(currentPage.Url) || currentPage.Depth <= 0 ||
 		!strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
 		return
 	}
@@ -54,7 +92,8 @@ func (crawler *Crawler) Crawl(currentPage *Page, depth int) {
 		pageWaitGroup.Add(1)
 		go func(childPage *Page) {
 			defer pageWaitGroup.Done()
-			crawler.Crawl(childPage, depth-1)
+			childPage.Depth = currentPage.Depth - 1
+			crawler.Crawl(childPage)
 			childPagesChan <- childPage
 		}(childPage)
 	}

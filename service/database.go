@@ -7,6 +7,7 @@ import (
 	"github.com/dgraph-io/dgo"
 	dapi "github.com/dgraph-io/dgo/protos/api"
 	"google.golang.org/grpc"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -88,6 +89,29 @@ func (store *DbStore) FindNode(ctx *context.Context, txn *dgo.Txn, Url string, d
 		if currentPage.MaxDepth() < depth {
 			return nil, errors.New("Depth does not match dgraph result.")
 		}
+	}
+	return
+}
+
+func (store *DbStore) FindNodeDepth(ctx *context.Context, txn *dgo.Txn, Url string) (depth int, err error) {
+	queryDepth := strconv.Itoa(math.MaxUint32)
+	variables := map[string]string{"$url": Url}
+	q := `query withvar($url: string, $depth: int){
+			result(func: eq(url, $url)) @recurse(depth: ` + queryDepth + `, loop: false){
+ 				uid
+				url
+				timestamp
+    			links
+			}
+		}`
+	resp, err := txn.QueryWithVars(*ctx, q, variables)
+	if err != nil {
+		return
+	}
+	currentPage, err := deserializePage(resp.Json)
+
+	if currentPage != nil {
+		depth = currentPage.MaxDepth()
 	}
 	return
 }

@@ -1,8 +1,8 @@
 package service_test
 
 import (
-	"context"
 	"github.com/stevenayers/clamber/service"
+	"context"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"strings"
@@ -22,6 +22,12 @@ var (
 		{"https://golang.org", 1},
 		{"https://google.com", 1},
 		{"https://youtube.com", 1},
+	}
+
+	NodeDepthTests = []NodeTest{
+		{"https://golang.org", 1},
+		{"https://golang.org", 2},
+		{"https://google.com", 2},
 	}
 )
 
@@ -85,6 +91,7 @@ func (s *StoreSuite) TestCreateAndCheckPredicate() {
 		expectedPage := service.Page{
 			Url:       test.Url,
 			Timestamp: time.Now().Unix(),
+			Depth:     1,
 		}
 		crawler := service.Crawler{
 			DbWaitGroup:    sync.WaitGroup{},
@@ -93,12 +100,11 @@ func (s *StoreSuite) TestCreateAndCheckPredicate() {
 			Config:         s.config,
 			Db:             s.store,
 		}
-		crawler.Crawl(&expectedPage, 1)
+		crawler.Crawl(&expectedPage)
 		crawler.DbWaitGroup.Wait()
-		time.Sleep(2 * time.Second)
 		ctx := context.Background()
 		txn := s.store.NewTxn()
-		exists, err := s.store.CheckPredicate(&ctx, txn, expectedPage.Uid, expectedPage.Links[0].Uid)
+		exists, err := s.store.CheckPredicate(&ctx, txn, expectedPage.Uid, expectedPage.Links[2].Uid)
 		if err != nil {
 			s.T().Fatal(err)
 		}
@@ -107,10 +113,11 @@ func (s *StoreSuite) TestCreateAndCheckPredicate() {
 }
 
 func (s *StoreSuite) TestCreateAndFindNode() {
-	for _, test := range NodeTests {
+	for _, test := range NodeDepthTests {
 		expectedPage := service.Page{
 			Url:       test.Url,
 			Timestamp: time.Now().Unix(),
+			Depth:     test.Depth,
 		}
 		crawler := service.Crawler{
 			DbWaitGroup:    sync.WaitGroup{},
@@ -119,7 +126,7 @@ func (s *StoreSuite) TestCreateAndFindNode() {
 			Config:         s.config,
 			Db:             s.store,
 		}
-		crawler.Crawl(&expectedPage, test.Depth)
+		crawler.Crawl(&expectedPage)
 		crawler.DbWaitGroup.Wait()
 		ctx := context.Background()
 		txn := s.store.NewTxn()
@@ -129,7 +136,6 @@ func (s *StoreSuite) TestCreateAndFindNode() {
 		}
 		assert.Equal(s.T(), expectedPage.Uid, resultPage.Uid, "Uid should have matched.")
 		assert.Equal(s.T(), expectedPage.Url, resultPage.Url, "Url should have matched.")
-		assert.Equal(s.T(), expectedPage.Timestamp, resultPage.Timestamp, "Timestamp should have matched.")
 	}
 
 }
