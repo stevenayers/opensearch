@@ -12,6 +12,11 @@ Proposed tech stack:
 - JSON
 - [Dgraph](https://dgraph.io)
 
+## Release Notes
+This release is the last monolith release of the API. Adding in display depth and infinite crawling while still returning
+a response in a reasonable time frame is not possible when the node is also having to run background workloads.
+
+Next steps will be to improve monitoring and figure out the best distributed design to move to.
 
 ## Getting Started
 Warning: Expect performance issues when running clamber and dgraph locally, avoid running a depth higher than 3.
