@@ -1,8 +1,8 @@
 package service_test
 
 import (
-	"github.com/stevenayers/clamber/service"
 	"context"
+	"github.com/stevenayers/clamber/service"
 	"github.com/stretchr/testify/assert"
 	"log"
 	"strings"
@@ -68,6 +68,38 @@ func (s *StoreSuite) TestFindNodeBadDepth() {
 	txn = s.store.NewTxn()
 	_, err = s.store.FindNode(&ctx, txn, "https://golang.org", 9)
 	assert.Equal(s.T(), true, strings.Contains(err.Error(), "Depth does not match dgraph result."))
+}
+
+func (s *StoreSuite) TestFindNodeDepth() {
+	ctx := context.Background()
+	p := service.Page{
+		Url:       "https://golang.org",
+		Timestamp: time.Now().Unix(),
+	}
+	c := service.Page{
+		Url:       "https://golang.org/child",
+		Timestamp: time.Now().Unix(),
+		Parent:    &p,
+	}
+	txn := s.store.NewTxn()
+	parentUid, err := s.store.FindOrCreateNode(&ctx, txn, &p)
+	if err != nil {
+		s.T().Fatal(err)
+		return
+	}
+
+	txn = s.store.NewTxn()
+	childUid, err := s.store.FindOrCreateNode(&ctx, txn, &c)
+	if err != nil {
+		s.T().Fatal(err)
+		return
+	}
+
+	txn = s.store.NewTxn()
+	_, err = s.store.CheckOrCreatePredicate(&ctx, txn, parentUid, childUid)
+	txn = s.store.NewTxn()
+	depth, err := s.store.FindNodeDepth(&ctx, txn, "https://golang.org")
+	assert.Equal(s.T(), 1, depth)
 }
 
 func (s *StoreSuite) TestCheckPredicateBadTransaction() {
