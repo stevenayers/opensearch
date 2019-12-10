@@ -1,0 +1,23 @@
+[api]
+  max_goroutines = 0
+  port = 8888
+  log_level = "info"
+  wait_crawl = true
+
+[service]
+  max_goroutines = 0
+  port = 8889
+  log_level = "info"
+  http_retry_attempts = 5
+  http_back_off_duration = 2
+  sqs_consumers_per_node = 5
+
+[database]
+  [[database.connections]]
+    host = "localhost"
+    port = 9080
+
+[queue]
+  queue_url = "http://localhost:4100/100010001000/test1"
+  max_concurrent_received_messages = 10
+  sqs_wait_time_seconds = 0

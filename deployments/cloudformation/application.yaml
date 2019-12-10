@@ -1,0 +1,105 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description:
+Parameters:
+  CidrBlock:
+    Type: String
+    Description: "Cidr Block for Application VPC"
+    Default: "10.0.0.0/16"
+
+Resources:
+  # Network Level
+  ApplicationVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref CidrBlock
+      EnableDnsHostnames: Yes
+      EnableDnsSupport: Yes
+      InstanceTenancy: "default"
+  ClamberAPISubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AssignIpv6AddressOnCreation: No
+      CidrBlock: "10.0.0.0/24"
+      MapPublicIpOnLaunch: No
+      VpcId:
+        Ref: ApplicationVPC
+  ClamberServiceSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      AssignIpv6AddressOnCreation: No
+      CidrBlock: "10.0.1.0/24"
+      MapPublicIpOnLaunch: No
+      VpcId:
+        Ref: ApplicationVPC
+
+  # Clamber API
+  ClamberAPI:
+    Type: AWS::ElasticBeanstalk::Application
+    Properties:
+      ApplicationName: "Postcode API"
+      Description: "API for Crime Lookup app"
+      ResourceLifecycleConfig:
+        ApplicationResourceLifecycleConfig
+
+  # Clamber Message Queue
+  ClamberSQS:
+    Type: AWS::SQS::Queue
+
+  # Clamber Service
+  ClamberService:
+    Type: AWS::CloudFormation::Stack # required
+      Properties:
+        NotificationARNs: # not required
+          - String
+        Parameters: # conditionally required if the nested stack requires the parameters
+          VPCZoneIdentifier:
+            - !Ref ClamberServiceSubnet
+        Tags: # not required
+          - Tag
+        TemplateURL: String # required
+        TimeoutInMinutes: Integer # not required
+
+  # Relationship Store
+  RelationshipStoreELB:
+    Type: AWS::ElasticLoadBalancing::LoadBalancer
+    Properties:
+      Listeners:
+        InstancePort:
+  RelationshipStore:
+    Type: AWS::CloudFormation::Stack # required
+      Properties:
+        NotificationARNs: # not required
+          - String
+        Parameters: # conditionally required if the nested stack requires the parameters
+          Key: Value
+        Tags: # not required
+          - Tag
+        TemplateURL: String # required
+        TimeoutInMinutes: Integer # not required
+
+  PageStore:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeDefinition
+      BillingMode: String
+      GlobalSecondaryIndexes:
+        - GlobalSecondaryIndex
+      KeySchema:
+        - KeySchema
+      LocalSecondaryIndexes:
+        - LocalSecondaryIndex
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoverySpecification
+      ProvisionedThroughput:
+        ProvisionedThroughput
+      SSESpecification:
+        SSESpecification
+      StreamSpecification:
+        StreamSpecification
+      TableName: String
+      Tags:
+        - Tag
+      TimeToLiveSpecification:
+        TimeToLiveSpecification
+

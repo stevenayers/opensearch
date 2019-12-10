@@ -5,40 +5,28 @@
 [![Release](https://img.shields.io/badge/release-v0.1--alpha-5272B4.svg)](https://github.com/stevenayers/clamber/releases/tag/v0.1-alpha)
 [![GoDoc](https://godoc.org/github.com/stevenayers/clamber?status.svg)](https://godoc.org/github.com/stevenayers/clamber)
 
-Proposed tech stack:
-- Design as a monolith first, move to distributed where/when necessary.
-- Golang
-- HTTP/REST
-- JSON
-- [Dgraph](https://dgraph.io)
+Fast & efficient web crawler providing an API which provides a means of bidirectional path finding.
 
+Distributed version is in progress. Standalone version is [here](https://github.com/stevenayers/clamber/tree/standalone)
 
-## Getting Started
-Warning: Expect performance issues when running clamber and dgraph locally, avoid running a depth higher than 3.
+The infrastructure stack I have chosen to use is purely AWS because I wanted a project where I could apply all the technologies covered in the AWS DevOps Engineer Certification syllabus.
 
+If I were to choose a stack based on what I believe to be the most appropriate, I would use the following:
+- AWS/Azure/GCP
+- Apache Kafka
+- Dgraph
+- Kubernetes (Preferably PaaS)
+- EFK
+- Prometheus, Alertmanager & Grafana
+- Drop the Page Store and store the Page data in Dgraph.
 
-1. Clone project and build binary
-    ```bash
-    git clone git@github.com:stevenayers/clamber.git
-    cd clamber
-    dep ensure
-    go build cmd/clamber.go
-    ```
-1. Run dgraph (if you don't have an existing instance already).
-    ```bash
-    mkdir -p ~/dgraph
-    
-    docker-compose -f docs/docker-compose.yaml up
-    ```
-1. Run clamber
-    ```bash
-    ./clamber -config cmd/Config.toml
-    ```
-1. You're good to go.
-    ```bash
-    curl -s 'http://localhost:8000/search?url=https://golang.org&depth=2'
-    ```
- 
+## Software Design
+![](./docs/imgs/clamber-distributed.png)
+
+## Infrastructure Design
+
+Stay tuned...
+
 ## Endpoints
 
 ### Search
@@ -52,6 +40,7 @@ Takes a URL, depth, allow_external_links, checks Page Database to see if we alre
 | depth                | int    | Tested              | -1 is infinite. If you specified 10, that would be your max depth to crawl. |
 | display_depth        | int    | Experimental        | how deep a depth to return in JSON |
 | allow_external_links | bool   | Not Yet Implemented | whether to crawl external links or not (Not yet implemented) |
+
 
 
 Sample response:
@@ -98,7 +87,10 @@ Sample response:
 }
 ```
 
-
+url
+depth
+startUrl
+parentUrl
 
 
 

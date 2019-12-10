@@ -8,13 +8,13 @@ services:
   - docker
 
 before_install:
-  - docker-compose -f test/dgraph-test-compose.yaml up &
+  - docker-compose -f test/dgraph-compose.yaml up &
 
 
 script:
-  - go test -v -coverprofile=api.txt -covermode=atomic ./api/...
-  - go test -v -coverprofile=coverage.txt -covermode=atomic ./service/...
-  - cat api.txt >> coverage.txt
+  - go test -v -coverprofile=app.txt -covermode=atomic ./app/...
+  - go test -v -coverprofile=coverage.txt -covermode=atomic ./app/...
+  - cat app.txt >> coverage.txt
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
