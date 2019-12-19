@@ -41,8 +41,15 @@ type (
 	}
 
 	JsonResult struct {
-		Result []*JsonPage `json:"result,omitempty"`
+		Result []*JsonPage      `json:"result,omitempty"`
+		Edges  []*JsonPredicate `json:"edges,omitempty"`
 	}
+
+	// JsonPredicate is used to hold the Predicate result from dgraph
+	JsonPredicate struct {
+		Matching int `json:"matching"`
+	}
+
 	// Page holds page data
 	SQSPage struct {
 		Url       string   `json:"url,omitempty"`
@@ -50,11 +57,6 @@ type (
 		Depth     int      `json:"depth,omitempty"`
 		Timestamp int64    `json:"timestamp,omitempty"`
 		StartUrl  string   `json:"start_url,omitempty"`
-	}
-
-	// JsonPredicate is used to hold the Predicate result from dgraph
-	JsonPredicate struct {
-		Matching int `json:"matching"`
 	}
 )
 
@@ -225,9 +227,11 @@ func DeserializeSQSPage(msg *sqs.Message) (currentPage *Page, err error) {
 
 // Checks JSON dgraph edge result to see if edge exists
 func DeserializePredicate(pb []byte) (exists bool, err error) {
-	var jsonPredicate JsonPredicate
-	err = json.Unmarshal(pb, &jsonPredicate)
-	exists = jsonPredicate.Matching > 0
+	var jsonPredicates JsonResult
+	err = json.Unmarshal(pb, &jsonPredicates)
+	if len(jsonPredicates.Edges) > 0 {
+		exists = jsonPredicates.Edges[0].Matching > 0
+	}
 	return
 }
 

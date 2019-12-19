@@ -230,30 +230,6 @@ func recursivelySearchPages(t *testing.T, p *page.Page, depth int, Url string, c
 	}
 }
 
-func (s *StoreSuite) TestCreateAndCheckPredicate() {
-	for _, test := range NodeTests {
-		expectedPage := page.Page{
-			Url:       test.Url,
-			Timestamp: time.Now().Unix(),
-			Depth:     1,
-		}
-		crawler := crawl.Crawler{
-			DbWaitGroup:    sync.WaitGroup{},
-			AlreadyCrawled: make(map[string]struct{}),
-			Store:          &s.store,
-		}
-		crawler.Crawl(&expectedPage)
-		crawler.DbWaitGroup.Wait()
-		ctx := context.Background()
-		txn := s.store.DB.NewTxn()
-		exists, err := s.store.CheckPredicate(&ctx, expectedPage.Uid, expectedPage.Links[2].Uid)
-		if err != nil {
-			s.T().Fatal(err)
-		}
-		assert.Equal(s.T(), true, exists, "Predicate should have existed.")
-	}
-}
-
 func (s *StoreSuite) TestCreateAndFindNode() {
 	for _, test := range NodeDepthTests {
 		expectedPage := page.Page{
@@ -269,7 +245,6 @@ func (s *StoreSuite) TestCreateAndFindNode() {
 		crawler.Crawl(&expectedPage)
 		crawler.DbWaitGroup.Wait()
 		ctx := context.Background()
-		txn := s.store.DB.NewTxn()
 		resultPage, err := s.store.FindNode(&ctx, test.Url, test.Depth)
 		if err != nil {
 			s.T().Fatal(err)

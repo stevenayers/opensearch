@@ -41,6 +41,8 @@ type (
 
 	QueueConfig struct {
 		QueueURL                      string `toml:"queue_url"`
+		QueueName                     string `toml:"queue_name"`
+		AwsRegion                     string `toml:"aws_region"`
 		MaxConcurrentReceivedMessages int64  `toml:"max_concurrent_received_messages"`
 		SQSWaitTimeSeconds            int64  `toml:"sqs_wait_time_seconds"`
 	}

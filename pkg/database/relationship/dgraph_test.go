@@ -74,13 +74,13 @@ func TestSuite(t *testing.T) {
 
 func (s *StoreSuite) TestBadConnectionsSetSchema() {
 	db := relationship.Store{}
-	dbConfig := config.DatabaseConfig{
+	config.AppConfig.Database = config.DatabaseConfig{
 		Connections: []*config.Connection{
 			{Host: "fakehost.local",
 				Port: 999999},
 		},
 	}
-	db.Connect(dbConfig)
+	db.Connect()
 	err := db.SetSchema()
 	assert.Equal(s.T(), true, err != nil)
 	if err != nil {
@@ -93,37 +93,27 @@ func (s *StoreSuite) TestFindNodeBadTransaction() {
 	txn := s.store.DB.NewTxn()
 	ctx := context.Background()
 	txn.Discard(ctx)
-	_, err := s.store.FindNode(&ctx, txn, "https://golang.org", 0)
+	_, err := s.store.FindNode(&ctx, "https://golang.org", 0)
 	assert.Equal(s.T(), true, err != nil)
 }
 
 func (s *StoreSuite) TestFindNodeBadDepth() {
 	ctx := context.Background()
 	p := page.Page{Url: "https://golang.org", Timestamp: time.Now().Unix()}
-	txn := s.store.DB.NewTxn()
-	_, err := s.store.FindOrCreateNode(&ctx, txn, &p)
+	_, err := s.store.FindOrCreateNode(&ctx, &p)
 	if err != nil {
 		s.T().Fatal(err)
 		return
 	}
-	txn = s.store.DB.NewTxn()
-	_, err = s.store.FindNode(&ctx, txn, "https://golang.org", 9)
+	_, err = s.store.FindNode(&ctx, "https://golang.org", 9)
 	assert.Equal(s.T(), true, strings.Contains(err.Error(), "Depth does not match dgraph result."))
-}
-
-func (s *StoreSuite) TestCheckPredicateBadTransaction() {
-	txn := s.store.DB.NewTxn()
-	ctx := context.Background()
-	txn.Discard(ctx)
-	_, err := s.store.CheckPredicate(&ctx, txn, "fakeuid1", "fakeuid2")
-	assert.Equal(s.T(), true, err != nil)
 }
 
 func (s *StoreSuite) TestCheckOrCreatePredicateBadTransaction() {
 	txn := s.store.DB.NewTxn()
 	ctx := context.Background()
 	txn.Discard(ctx)
-	_, err := s.store.CheckOrCreatePredicate(&ctx, txn, "fakeuid1", "fakeuid2")
+	_, err := s.store.CheckOrCreatePredicate(&ctx, "fakeuid1", "fakeuid2")
 	assert.Equal(s.T(), true, err != nil)
 }
 

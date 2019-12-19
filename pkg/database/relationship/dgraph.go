@@ -98,7 +98,9 @@ func (store *Store) FindOrCreateNode(ctx *context.Context, currentPage *page.Pag
 	var resp *api.Response
 	v := map[string]string{"$url": currentPage.Url}
 	q := `query withvar($url: string){
-			page as var(func: eq(url, $url))
+			page as result(func: eq(url, $url)) {
+				uid
+			}
 		}`
 	currentPage.Uid = "_:cp"
 	p, _ := page.SerializeJsonPage(currentPage)
@@ -116,11 +118,9 @@ func (store *Store) FindOrCreateNode(ctx *context.Context, currentPage *page.Pag
 		uid = resp.Uids["cp"]
 	} else {
 		var resultPage *page.Page
-		txn = store.DB.NewTxn()
-		resultPage, err = store.FindNode(ctx, currentPage.Url, 0)
-		uid = resultPage.Uid
-		if err != nil {
-			return
+		resultPage, err = page.DeserializeJsonPage(resp.Json)
+		if resultPage != nil {
+			uid = resultPage.Uid
 		}
 	}
 	return
@@ -147,25 +147,28 @@ func (store *Store) CheckPredicate(ctx *context.Context, parentUid string, child
 // CheckOrCreatePredicate function checks for edge, creates if doesn't exist.
 func (store *Store) CheckOrCreatePredicate(ctx *context.Context, parentUid string, childUid string) (exists bool, err error) {
 	txn := store.DB.NewTxn()
+	var resp *api.Response
 	defer txn.Discard(*ctx)
 	v := map[string]string{"$parentUid": parentUid, "$childUid": childUid}
 	q := `query withvar($parentUid: string, $childUid: string){
-			link as var(func: uid($parentUid)) @filter(uid_in(links, $childUid))
+			edge as edges(func: uid($parentUid)) @filter(uid_in(links, $childUid)){
+				matching: count(links) @filter(uid($childUid))
+			}
 		}`
 	req := &api.Request{
 		Query: q,
 		Vars:  v,
 		Mutations: []*api.Mutation{{
-			Cond: `@if(eq(len(link), 0))`,
+			Cond: `@if(eq(len(edge), 0))`,
 			Set:  []*api.NQuad{{Subject: parentUid, Predicate: "links", ObjectId: childUid}},
 		}},
 		CommitNow: true,
 	}
-	_, err = txn.Do(*ctx, req)
+	resp, err = txn.Do(*ctx, req)
 	if err != nil {
 		return
 	}
-	exists, err = store.CheckPredicate(ctx, parentUid, childUid)
+	exists, err = page.DeserializePredicate(resp.Json)
 	if err != nil {
 		return
 	}

@@ -1,16 +1,8 @@
 [api]
   max_goroutines = 0
-  port = 80
+  port = 5000
   log_level = "info"
   wait_crawl = true
-
-[service]
-  max_goroutines = 0
-  port = 8889
-  log_level = "info"
-  http_retry_attempts = 5
-  http_back_off_duration = 2
-  sqs_consumers_per_node = 1
 
 [database]
   [[database.connections]]
@@ -18,7 +10,7 @@
     port = 9080
 
 [queue]
-  queue_name = ""
+  queue_name = "ClamberSQS"
   aws-region = "eu-west-2"
   max_concurrent_received_messages = 10
   sqs_wait_time_seconds = 5
