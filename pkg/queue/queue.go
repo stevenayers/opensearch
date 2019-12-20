@@ -53,8 +53,9 @@ func NewQueue() (queue *Queue) {
 				_ = level.Error(logging.Logger).Log("msg", "Unable to find queue", "queueName", config.AppConfig.Queue.QueueName)
 			}
 			_ = level.Error(logging.Logger).Log("msg", err.Error())
+		} else {
+			config.AppConfig.Queue.QueueURL = *resultURL.QueueUrl
 		}
-		config.AppConfig.Queue.QueueURL = *resultURL.QueueUrl
 	}
 	return
 }
