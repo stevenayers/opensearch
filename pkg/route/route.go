@@ -2,8 +2,7 @@ package route
 
 import (
 	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/stevenayers/clamber/pkg/logging"
+	"github.com/stevenayers/opensearch/pkg/logging"
 	"net/http"
 )
 
@@ -29,7 +28,7 @@ func NewRouter(definedRoutes []Route) *mux.Router {
 			Name(route.Name).
 			Handler(handler).Queries(route.Params...)
 	}
-	router.Handle("/metrics", promhttp.Handler())
+	//router.Handle("/metrics", promhttp.Handler())
 
 	return router
 }

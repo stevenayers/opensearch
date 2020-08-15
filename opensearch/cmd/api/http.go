@@ -4,13 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"github.com/go-kit/kit/log/level"
-	"github.com/stevenayers/clamber/pkg/config"
-	"github.com/stevenayers/clamber/pkg/database/relationship"
-	"github.com/stevenayers/clamber/pkg/logging"
-	"github.com/stevenayers/clamber/pkg/page"
-	"github.com/stevenayers/clamber/pkg/query"
-	"github.com/stevenayers/clamber/pkg/queue"
-	"github.com/stevenayers/clamber/pkg/route"
+	"github.com/stevenayers/opensearch/pkg/config"
+	"github.com/stevenayers/opensearch/pkg/database/relationship"
+	"github.com/stevenayers/opensearch/pkg/logging"
+	"github.com/stevenayers/opensearch/pkg/page"
+	"github.com/stevenayers/opensearch/pkg/query"
+	"github.com/stevenayers/opensearch/pkg/queue"
+	"github.com/stevenayers/opensearch/pkg/route"
 	"net/http"
 	"strings"
 )
@@ -33,7 +33,7 @@ var Routes = []route.Route{
 // required depth, and if it doesn't exist, initiate a crawl.
 func SearchHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "cloudformation/json; charset=UTF-8")
-	requestUid := r.Header.Get("Clamber-Request-ID")
+	requestUid := r.Header.Get("OpenSearch-Request-ID")
 	statusCode := http.StatusOK
 	q, err := query.New(r)
 	if err != nil {

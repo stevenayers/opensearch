@@ -1,8 +1,8 @@
 /*
-Package app provides the clamber crawling package.
+Package app provides the opensearch crawling package.
 
 To initiate a crawl, create a Crawler with an empty sync.WaitGroup and struct map. DbWaitGroup is needed to ensure the
-clamber process does not exit before the crawler is done writing to the database. AlreadyCrawled keeps track of the
+opensearch process does not exit before the crawler is done writing to the database. AlreadyCrawled keeps track of the
 URLs which have been crawled already in that crawl process. The rest are self explanatory.
 
 		crawler := app.Crawler{

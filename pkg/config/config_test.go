@@ -3,10 +3,10 @@ package config_test
 import (
 	"fmt"
 	"github.com/go-kit/kit/log"
-	"github.com/stevenayers/clamber/pkg/config"
-	"github.com/stevenayers/clamber/pkg/crawl"
-	"github.com/stevenayers/clamber/pkg/database/relationship"
-	"github.com/stevenayers/clamber/pkg/logging"
+	"github.com/stevenayers/opensearch/pkg/config"
+	"github.com/stevenayers/opensearch/pkg/crawl"
+	"github.com/stevenayers/opensearch/pkg/database/relationship"
+	"github.com/stevenayers/opensearch/pkg/logging"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"os"
@@ -22,7 +22,7 @@ type StoreSuite struct {
 
 func (s *StoreSuite) SetupSuite() {
 	var err error
-	configFile := "/Users/steven/git/clamber/configs/config.toml"
+	configFile := "/Users/steven/git/opensearch/configs/config.toml"
 	err = config.InitConfig(configFile)
 	if err != nil {
 		s.T().Fatal(err)
@@ -35,7 +35,7 @@ func (s *StoreSuite) SetupSuite() {
 
 func (s *StoreSuite) SetupTest() {
 	var err error
-	configFile := "/Users/steven/git/clamber/configs/config.toml"
+	configFile := "/Users/steven/git/opensearch/configs/config.toml"
 	err = config.InitConfig(configFile)
 	if err != nil {
 		s.T().Fatal(err)
@@ -78,7 +78,7 @@ func (s *StoreSuite) TestConfigPath() {
 }
 
 func (s *StoreSuite) TestConfigParse() {
-	configFile := "/Users/steven/git/clamber/test/invaild_config.toml"
+	configFile := "/Users/steven/git/opensearch/test/invaild_config.toml"
 	err := config.InitConfig(configFile)
 	assert.Equal(s.T(), true, err != nil)
 	if err != nil {

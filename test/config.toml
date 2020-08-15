@@ -12,6 +12,6 @@
     port = 9080
 
 [queue]
-  queue_url = "https://sqs.eu-west-2.amazonaws.com/311261809690/clamber-test"
+  queue_url = "http://localhost:4576"
   max_concurrent_received_messages = 10
   sqs_wait_time_seconds = 5

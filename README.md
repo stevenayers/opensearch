@@ -1,13 +1,13 @@
-# clamber
-[![Build Status](https://travis-ci.org/stevenayers/clamber.svg?branch=master)](https://travis-ci.org/stevenayers/clamber)
-[![codecov.io Code Coverage](https://img.shields.io/codecov/c/github/stevenayers/clamber.svg)](https://codecov.io/github/stevenayers/clamber?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/stevenayers/clamber)](https://goreportcard.com/report/github.com/stevenayers/clamber)
-[![Release](https://img.shields.io/badge/release-v0.1--alpha-5272B4.svg)](https://github.com/stevenayers/clamber/releases/tag/v0.1-alpha)
-[![GoDoc](https://godoc.org/github.com/stevenayers/clamber?status.svg)](https://godoc.org/github.com/stevenayers/clamber)
+# OpenSearch
+[![Build Status](https://travis-ci.org/stevenayers/opensearch.svg?branch=master)](https://travis-ci.org/stevenayers/opensearch)
+[![codecov.io Code Coverage](https://img.shields.io/codecov/c/github/stevenayers/opensearch.svg)](https://codecov.io/github/stevenayers/opensearch?branch=master)
+[![Go Report Card](https://goreportcard.com/badge/github.com/stevenayers/opensearch)](https://goreportcard.com/report/github.com/stevenayers/opensearch)
+[![Release](https://img.shields.io/badge/release-v0.1--alpha-5272B4.svg)](https://github.com/stevenayers/opensearch/releases/tag/v0.1-alpha)
+[![GoDoc](https://godoc.org/github.com/stevenayers/opensearch?status.svg)](https://godoc.org/github.com/stevenayers/opensearch)
 
 Fast & efficient web crawler providing an API which provides a means of bidirectional path finding.
 
-Distributed version is in progress. Standalone version is [here](https://github.com/stevenayers/clamber/tree/standalone)
+Distributed version is in progress. Standalone version is [here](https://github.com/stevenayers/opensearch/tree/standalone)
 
 The infrastructure stack I have chosen to use is purely AWS because I wanted a project where I could apply all the technologies covered in the AWS DevOps Engineer Certification syllabus.
 
@@ -21,7 +21,7 @@ If I were to choose a stack based on what I believe to be the most appropriate, 
 - Drop the Page Store and store the Page data in Dgraph.
 
 ## Software Design
-![](./docs/imgs/clamber-distributed.png)
+![](./docs/imgs/opensearch-distributed.png)
 
 ## Infrastructure Design
 

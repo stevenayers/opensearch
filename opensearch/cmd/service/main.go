@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/stevenayers/clamber/pkg/config"
-	"github.com/stevenayers/clamber/pkg/crawl"
-	"github.com/stevenayers/clamber/pkg/logging"
-	"github.com/stevenayers/clamber/pkg/route"
+	"github.com/stevenayers/opensearch/pkg/config"
+	"github.com/stevenayers/opensearch/pkg/crawl"
+	"github.com/stevenayers/opensearch/pkg/logging"
+	"github.com/stevenayers/opensearch/pkg/route"
 	stdlog "log"
 	"net/http"
 	"os"
@@ -32,7 +32,7 @@ func main() {
 	router := route.NewRouter(Routes)
 	_ = level.Info(logging.Logger).Log(
 		"port", config.AppConfig.Service.Port,
-		"msg", "clamber service started",
+		"msg", "opensearch service started",
 	)
 	err = http.ListenAndServe(fmt.Sprintf(":%d", config.AppConfig.Service.Port), router)
 	if err != nil {

@@ -6,11 +6,11 @@ import (
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/go-kit/kit/log/level"
 	"github.com/google/uuid"
-	"github.com/stevenayers/clamber/pkg/config"
-	"github.com/stevenayers/clamber/pkg/database/relationship"
-	"github.com/stevenayers/clamber/pkg/logging"
-	"github.com/stevenayers/clamber/pkg/page"
-	"github.com/stevenayers/clamber/pkg/queue"
+	"github.com/stevenayers/opensearch/pkg/config"
+	"github.com/stevenayers/opensearch/pkg/database/relationship"
+	"github.com/stevenayers/opensearch/pkg/logging"
+	"github.com/stevenayers/opensearch/pkg/page"
+	"github.com/stevenayers/opensearch/pkg/queue"
 	"net/http"
 	"strings"
 	"sync"
@@ -73,7 +73,7 @@ func (crawler *Crawler) Get(currentPage *page.Page) (resp *http.Response, err er
 		_ = level.Error(logging.Logger).Log("context", "HTTP failure", "url", currentPage.Url, "msg", err.Error())
 		return
 	}
-	req.Header.Set("User-Agent", "stevenayers/clamber")
+	req.Header.Set("User-Agent", "stevenayers/opensearch")
 	count := 0
 	for maxAttempts > count {
 		count++

@@ -5,7 +5,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"github.com/go-kit/kit/log/level"
-	"github.com/stevenayers/clamber/pkg/logging"
+	"github.com/stevenayers/opensearch/pkg/logging"
 	"net/http"
 	"net/url"
 	"path"

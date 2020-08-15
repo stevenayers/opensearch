@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/dgraph-io/dgo/v2"
 	"github.com/dgraph-io/dgo/v2/protos/api"
-	"github.com/stevenayers/clamber/pkg/config"
-	"github.com/stevenayers/clamber/pkg/page"
+	"github.com/stevenayers/opensearch/pkg/config"
+	"github.com/stevenayers/opensearch/pkg/page"
 	"google.golang.org/grpc"
 	"strconv"
 )

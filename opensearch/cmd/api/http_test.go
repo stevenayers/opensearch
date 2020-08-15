@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/gorilla/mux"
-	"github.com/stevenayers/clamber/clamber/cmd/api"
-	"github.com/stevenayers/clamber/pkg/config"
-	"github.com/stevenayers/clamber/pkg/crawl"
-	"github.com/stevenayers/clamber/pkg/database/relationship"
-	"github.com/stevenayers/clamber/pkg/logging"
-	"github.com/stevenayers/clamber/pkg/route"
+	"github.com/stevenayers/opensearch/opensearch/cmd/api"
+	"github.com/stevenayers/opensearch/pkg/config"
+	"github.com/stevenayers/opensearch/pkg/crawl"
+	"github.com/stevenayers/opensearch/pkg/database/relationship"
+	"github.com/stevenayers/opensearch/pkg/logging"
+	"github.com/stevenayers/opensearch/pkg/route"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"net/http"
@@ -41,7 +41,7 @@ type (
 func (s *StoreSuite) SetupSuite() {
 	var err error
 	main.InitFlags(&main.AppFlags)
-	*main.AppFlags.ConfigFile = "/Users/steven/git/clamber/configs/config.toml"
+	*main.AppFlags.ConfigFile = "/Users/steven/git/opensearch/configs/config.toml"
 	config.InitConfig(*main.AppFlags.ConfigFile)
 	if err != nil {
 		s.T().Fatal(err)
@@ -54,7 +54,7 @@ func (s *StoreSuite) SetupSuite() {
 
 func (s *StoreSuite) SetupTest() {
 	var err error
-	*main.AppFlags.ConfigFile = "/Users/steven/git/clamber/configs/config.toml"
+	*main.AppFlags.ConfigFile = "/Users/steven/git/opensearch/configs/config.toml"
 	err = config.InitConfig(*main.AppFlags.ConfigFile)
 	if err != nil {
 		s.T().Fatal(err)

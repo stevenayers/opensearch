@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/stevenayers/clamber/pkg/route"
+	"github.com/stevenayers/opensearch/pkg/route"
 )
 
 // Routes contains defined routes data

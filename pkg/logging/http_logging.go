@@ -32,7 +32,7 @@ func HttpResponseLogger(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		requestUid := uuid.New()
-		r.Header.Add("Clamber-Request-ID", requestUid.String())
+		r.Header.Add("OpenSearch-Request-ID", requestUid.String())
 		rw := NewRichResponseWriter(w)
 		handler.ServeHTTP(rw, r)
 		_ = level.Info(Logger).Log(

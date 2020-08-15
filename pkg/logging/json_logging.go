@@ -15,7 +15,7 @@ func InitJsonLogger(writer io.Writer, logLevel string, component string) {
 	logger = log.With(logger, "timestamp", log.DefaultTimestampUTC)
 	logger = log.With(
 		logger,
-		"app", "clamber",
+		"app", "opensearch",
 		"node", uuid.New().String(),
 		"component", component,
 	)

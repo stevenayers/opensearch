@@ -4,11 +4,11 @@ import (
 	"fmt"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/stevenayers/clamber/pkg/config"
-	"github.com/stevenayers/clamber/pkg/crawl"
-	"github.com/stevenayers/clamber/pkg/database/relationship"
-	"github.com/stevenayers/clamber/pkg/logging"
-	"github.com/stevenayers/clamber/pkg/page"
+	"github.com/stevenayers/opensearch/pkg/config"
+	"github.com/stevenayers/opensearch/pkg/crawl"
+	"github.com/stevenayers/opensearch/pkg/database/relationship"
+	"github.com/stevenayers/opensearch/pkg/logging"
+	"github.com/stevenayers/opensearch/pkg/page"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 	"net/http"
@@ -42,7 +42,7 @@ type (
 
 func (s *StoreSuite) SetupSuite() {
 	var err error
-	configFile := "/Users/steven/git/clamber/configs/config.toml"
+	configFile := "/Users/steven/git/opensearch/configs/config.toml"
 	err = config.InitConfig(configFile)
 	if err != nil {
 		s.T().Fatal(err)
@@ -55,7 +55,7 @@ func (s *StoreSuite) SetupSuite() {
 
 func (s *StoreSuite) SetupTest() {
 	var err error
-	configFile := "/Users/steven/git/clamber/configs/config.toml"
+	configFile := "/Users/steven/git/opensearch/configs/config.toml"
 	err = config.InitConfig(configFile)
 	if err != nil {
 		s.T().Fatal(err)
