@@ -16,17 +16,22 @@ services:
     volumes:
       - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
   zero:
-    image: dgraph/dgraph:latest
+    image: dgraph/dgraph:v20.03.1
     ports:
       - 5080:5080
       - 6080:6080
     restart: on-failure
     command: dgraph zero --my=zero:5080
   server:
-    image: dgraph/dgraph:latest
+    image: dgraph/dgraph:v20.03.1
     ports:
-      - 127.0.0.1:8080:8080
-      - 127.0.0.1:9080:9080
+      - 8080:8080
+      - 9080:9080
       - 7080:7080
     restart: on-failure
     command: dgraph alpha --my=server:7080 --lru_mb=4096 --zero=zero:5080
+  ratel:
+    image: dgraph/dgraph:v20.03.1
+    ports:
+      - 8000:8000
+    command: dgraph-ratel

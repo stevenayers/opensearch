@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/dgraph-io/dgo/v2"
-	"github.com/dgraph-io/dgo/v2/protos/api"
+	"github.com/dgraph-io/dgo/v200"
+	"github.com/dgraph-io/dgo/v200/protos/api"
 	"github.com/stevenayers/opensearch/pkg/config"
 	"github.com/stevenayers/opensearch/pkg/page"
 	"google.golang.org/grpc"
@@ -40,7 +40,7 @@ func (store *Store) SetSchema() (err error) {
 	op.Schema = `
 	url: string @index(hash) @upsert .
 	timestamp: int .
-	deoth: int .
+	depth: int .
 	status_code: int .
     links: [uid] @count @reverse .
 	`
